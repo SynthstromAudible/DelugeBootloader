@@ -45,6 +45,7 @@ Includes <System Includes> , "Project Includes"
 #include "rspi/rspi.h"
 #include "fatfs/ff.h"
 #include "sio_char.h"
+#include "peripheral_init_basic.h"
 
 
 /******************************************************************************
@@ -242,6 +243,9 @@ const uint8_t letterSegments[26] = {
     0x6D
 };
 
+
+
+
 /******************************************************************************
 * Function Name: spibsc_init2
 * Description  :
@@ -254,6 +258,13 @@ const uint8_t letterSegments[26] = {
 
 void spibsc_init2(void)
 {
+
+	Peripheral_Basic_Init();
+
+	R_INTC_Init();
+
+	enable_irq();
+	enable_fiq();
 
 	// Uart 1 for PIC / display
 	uartInit(UART_CHANNEL_PIC, 200000);
@@ -276,6 +287,15 @@ void spibsc_init2(void)
 	//enable_irq();
 	//enable_fiq();
 
+    // SD host interface
+	setPinMux(7, 0, 3); // CD
+	setPinMux(7, 1, 3); // WP
+	setPinMux(7, 2, 3); // D1
+	setPinMux(7, 3, 3); // D0
+	setPinMux(7, 4, 3); // CLK
+	setPinMux(7, 5, 3); // CMD
+	setPinMux(7, 6, 3); // D3
+	setPinMux(7, 7, 3); // D2
 
     //initUartInterrupts();
 
@@ -284,9 +304,12 @@ void spibsc_init2(void)
 	setPinMux(6, 15, 5); // TX
 	setPinMux(6, 14, 5); // RX
 
+	enableAllModuleClocks();
 
-    //CPG.STBCR10 = 0x00u; // Enable clock to SPI, I think
-	CPG.STBCR12 = 0xF0u; // Enable SD host
+
+
+
+
 
 	// Not quite sure why, but we have to wait a while before sending out the UART, otherwise it sometimes doesn't get received by the PIC MCU (At least on Revision E)
 	// I did try lowering the baud rate of the UART and it didn't help
@@ -313,6 +336,7 @@ void spibsc_init2(void)
 			// If the shift button's down, then update the firmware
 			if (received == 152) {
 				updateFirmware();
+				uartPrintln("updated successfully");
 				break;
 			}
 		}
@@ -322,6 +346,82 @@ void spibsc_init2(void)
     boot_demo();
 }
 
+
+void enableAllModuleClocks() {
+
+    volatile uint8_t dummy_buf = 0u;
+
+    UNUSED_VARIABLE(dummy_buf);
+
+    /* ---- Enable all module clocks ---- */
+
+    /* Port level is keep in standby mode, [1], [1], [0],           */
+    /* [1], [0], [1], CoreSight                                     */
+    CPG.STBCR2 = 0x6Au;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR2;
+
+    /* IEBus, IrDA, LIN0, LIN1, MTU2, RSCAN2, [0], PWM              */
+    CPG.STBCR3 = 0x00u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR3;
+
+    /* SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7       */
+    CPG.STBCR4 = 0x00u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR4;
+
+    /* SCIM0, SCIM1, SDG0, SDG1, SDG2, SDG3, OSTM0, OSTM1           */
+    CPG.STBCR5 = 0x00u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR5;
+
+    /* A/D, CEU, DISCOM0, DISCOM1, DRC0, DRC1, JCU, RTClock         */
+    CPG.STBCR6 = 0x00u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR6;
+
+    /* DVDEC0, DVDEC1, [1], ETHER, FLCTL, [1], USB0, USB1           */
+    CPG.STBCR7 = 0x24u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR7;
+
+    /* IMR-LS20, IMR-LS21, IMR-LSD, MMCIF, MOST50, [1], SCUX, [1]   */
+    CPG.STBCR8 = 0x05u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR8;
+
+    /* I2C0, I2C1, I2C2, I2C3, SPIBSC0, SPIBSC1, VDC50, VDC51       */
+    CPG.STBCR9 = 0x00u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR9;
+
+    /* RSPI0, RSPI1, RSPI2, RSPI3, RSPI4, CD-ROMDEC, RSPDIF, RGPVG  */
+    CPG.STBCR10 = 0x00u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR10;
+
+    /* [1], [1], SSIF0, SSIF1, SSIF2, SSIF3, SSIF4, SSIF5           */
+    CPG.STBCR11 = 0xC0u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR11;
+
+    /* [1], [1], [1], [1], SDHI00, SDHI01, SDHI10, SDHI11           */
+    CPG.STBCR12 = 0xF0u;
+
+    /* (Dummy read)                                                 */
+    dummy_buf = CPG.STBCR12;
+}
 
 void setNumericDisplay(char const* text) {
 	uartPutChar(UART_CHANNEL_PIC, 224);
@@ -346,10 +446,10 @@ void progressLoadingAnimation() {
 
     loadingAnimationPos = (loadingAnimationPos + 1) % 10;
 
-	uartPutChar(2, 116);
+	uartPutChar(UART_CHANNEL_PIC, 116);
 	int i;
 	for (i = 0; i < 4; i++) {
-		uartPutChar(2, segmentsInWaiting[i]);
+		uartPutChar(UART_CHANNEL_PIC, segmentsInWaiting[i]);
 	}
 }
 
@@ -363,12 +463,15 @@ void updateFirmware() {
 	FATFS fileSystem;
 
 	FRESULT result = f_mount(&fileSystem, "", 1);
+	uartPrintln("mounted");
     if (result != FR_OK) goto cardError;
 	DIR dir;
 
 	result = f_opendir(&dir, "");
+	uartPrintln("dir opened");
     if (result != FR_OK) goto cardError;
 	while (true) {
+		uartPrintln("looking at file");
 		FILINFO fno;
 		result = f_readdir(&dir, &fno); // Read a directory item
 		if (result != FR_OK || fno.fname[0] == 0) break; // Break on error or end of dir
@@ -377,6 +480,7 @@ void updateFirmware() {
 		if (dotPos != 0 && !strcmp(dotPos, ".BIN")) {
 
 			// We found our .bin file!
+			uartPrintln("found bin file");
 
 			f_closedir(&dir);
 
@@ -395,6 +499,8 @@ void updateFirmware() {
 				eraseAddress += 0x10000; // 64K
 				progressLoadingAnimation();
 			}
+
+			uartPrintln("erasing finished");
 
 			char buffer[256];
 			uint32_t writeAddress = 0x80000;
@@ -421,6 +527,7 @@ void updateFirmware() {
 
 			// Success. It's all updated.
 			setNumericDisplay("DONE");
+			uartPrintln("copying finished");
 			// Go back into external SPI bus mode thing
 			spibsc_exmode(0);
 			return;
@@ -434,6 +541,7 @@ void updateFirmware() {
 
 	cardError:
 	setNumericDisplay("CARD");
+	uartPrintln("card error");
 	while (1) {}
 }
 

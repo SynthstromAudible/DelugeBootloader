@@ -156,9 +156,5 @@ abort_handler:
 
 reserved_handler:
     B    reserved_handler
-irq_handler:
-    B    irq_handler
-fiq_handler:
-    B    fiq_handler
 .end
 
