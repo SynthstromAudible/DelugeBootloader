@@ -18,34 +18,68 @@
 * you agree to the additional terms and conditions found by accessing the
 * following link:
 * http://www.renesas.com/disclaimer
-*
-* Copyright (C) 2014 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2012 - 2014 Renesas Electronics Corporation. All rights reserved.
 *******************************************************************************/
 /*******************************************************************************
-* File Name     : intc_handler.c
-* Device(s)     : RZ/A1H (R7S721001)
-* Tool-Chain    : GNUARM-NONEv14.02-EABI
-* H/W Platform  : RSK+RZA1H CPU Board
-* Description   : Sample Program - Handler process
-*******************************************************************************/
-/*******************************************************************************
-* History       : DD.MM.YYYY Version Description
-*               : 21.10.2014 1.00
+* File Name   : intc_handler.c
+* $Rev: 819 $
+* $Date:: 2014-04-18 17:03:54 +0900#$
+* Description : INTC Driver - Handler process
 *******************************************************************************/
 
-/*******************************************************************************
+
+/******************************************************************************
 Includes   <System Includes> , "Project Includes"
-*******************************************************************************/
-/* Default  type definition header */
-#include "typedefine.h"
-/* INTC Driver Header */
-#include "intc.h"
-/* I/O Register root header */
-#include "iodefine.h"
-/* INTC system header */
+******************************************************************************/
+#include "r_typedefs.h"
+#include "devdrv_intc.h"        /* INTC Driver Header */
 #include "intc_handler.h"
-/* Interchangeable compiler specific header */
-//#include "compiler_settings.h"
+#include "iodefine.h"
+
+
+#ifdef __ICCARM__
+#include <intrinsics.h>
+#endif
+#ifdef __GNUC__
+//#include "irq.h"
+#endif
+
+#ifdef __CC_ARM
+#pragma arm section code   = "CODE_HANDLER"
+#pragma arm section rodata = "CONST_HANDLER"
+#pragma arm section rwdata = "DATA_HANDLER"
+#pragma arm section zidata = "BSS_HANDLER"
+#endif
+
+/******************************************************************************
+Typedef definitions
+******************************************************************************/
+
+
+/******************************************************************************
+Macro definitions
+******************************************************************************/
+
+
+/******************************************************************************
+Imported global variables and functions (from other files)
+******************************************************************************/
+
+
+/******************************************************************************
+Exported global variables and functions (to be accessed by other files)
+******************************************************************************/
+#ifdef __ICCARM__
+/* ==== Prototype declaration ==== */
+void INTC_Handler_Interrupt(uint32_t icciar);
+__fiq __arm void FiqHandler_Interrupt(void);
+#endif
+
+
+/******************************************************************************
+Private global variables and functions
+******************************************************************************/
+
 
 void enable_irq () {
 	asm("CPSIE   i");
@@ -67,36 +101,33 @@ void disable_fiq () {
 	asm("ISB");
 }
 
-
-/*******************************************************************************
-* Function Name: intc_handler_interrupt
+/******************************************************************************
+* Function Name: INTC_Handler_Interrupt
 * Description  : This function is the INTC interrupt handler processing called 
 *              : by the irq_handler. Executes the handler processing which 
 *              : corresponds to the INTC interrupt source ID specified by the
-*              : icciar by calling the Userdef_INTC_HandlerExe function. The
-*              : IRQ multiple interrupts are enabled. The processing for
-*              : unsupported interrupt ID is executed by calling
-*              : Userdef_INTC_UndefId function.
+*              : icciar by calling the Userdef_INTC_HandlerExe function. The IRQ 
+*              : multiple interrupts are enabled. The processing for unsupported
+*              : interrupt ID is executed by calling Userdef_INTC_UndefId function.
 *              : In the interrupt handler processing, when the int_sense shows 
 *              : "INTC_LEVEL_SENSITIVE", clear the interrupt source because it
 *              : means a level sense interrupt. 
-*              : Stacks are restored by ASM with the top level to correspond
-*              : to multiple interrupts
 * Arguments    : uint32_t icciar : Interrupt ID (value of ICCIAR register)
 * Return Value : none
-*******************************************************************************/
-void intc_handler_interrupt (uint32_t icciar)
+******************************************************************************/
+void INTC_Handler_Interrupt(uint32_t icciar)
 {
+    /* Stacks are restored by ASM with the top level to correspond to multiple interrupts */
     uint32_t mask;
     uint32_t int_sense;
     uint16_t int_id;
-    uint32_t volatile * paddr;
+    uint32_t volatile * addr;
 
     int_id = (uint16_t)(icciar & 0x000003FFuL); /* Obtain interrupt ID */
 
     if (int_id >= INTC_ID_TOTAL)    /* In case of unsupported interrupt ID */
     {
-        userdef_intc_undef_id(int_id);
+        Userdef_INTC_UndefId(int_id);
     }
 
     /* ==== Interrupt handler call ==== */
@@ -106,36 +137,32 @@ void intc_handler_interrupt (uint32_t icciar)
     /* The n can be calculated by int_id / 16                                  */
     /* The upper 1 bit out of 2 bits for the bit field width is the target bit */
     /* The target bit can be calculated by ((int_id % 16) * 2) + 1             */
-    paddr = (volatile uint32_t *)&INTC.ICDICFR0;
-    mask = (uint32_t)(1 << (((int_id % 16) * 2) + 1));
-    if (0 == ((*(paddr + (int_id / 16))) & mask))  /* In the case of level sense */
+    addr = (volatile uint32_t *)&INTC.ICDICFR0;
+    mask = 1 << (((int_id % 16) * 2) + 1);
+    if (0 == (*(addr + (int_id / 16)) & mask))  /* In the case of level sense */
     {
         int_sense = INTC_LEVEL_SENSITIVE;
     }
-
-    /* In the case of edge trigger */
-    else
+    else                                        /* In the case of edge trigger */
     {
         int_sense = INTC_EDGE_TRIGGER;
     }
 
-    /* Call interrupt handler */
-    userdef_intc_handler_exe(int_id, int_sense);
+    Userdef_INTC_HandlerExe(int_id, int_sense);     /* Call interrupt handler */
 
-    /* IRQ interrupt disabled */
-    disable_irq();
+    disable_irq();        /* IRQ interrupt disabled */
 }
 
 /*******************************************************************************
-* Function Name: fiq_handler_interrupt
-* Description  : This function is the INTC interrupt handler processing called
-*              : by the fiq_handler.
+* Function Name: FiqHandler_Interrupt
+* Description  : This function is the INTC interrupt handler processing called by 
+*              : the fiq_handler.
 * Arguments    : none
 * Return Value : none
 *******************************************************************************/
 void fiq_handler_interrupt (void)
 {
-    userdef_fiq_handler_exe();
+    Userdef_FIQ_HandlerExe();
 }
 
 

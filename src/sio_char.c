@@ -379,13 +379,13 @@ void int_txi_2 (uint32_t sense) {
 
 
 void initUartInterrupts() {
-	R_INTC_Regist_Int_Func(INTC_ID_TXI0, &int_txi_0);
-	R_INTC_Regist_Int_Func(INTC_ID_TXI1, &int_txi_1);
-	R_INTC_Regist_Int_Func(INTC_ID_TXI2, &int_txi_2);
+	R_INTC_RegistIntFunc(INTC_ID_TXI0, &int_txi_0);
+	R_INTC_RegistIntFunc(INTC_ID_TXI1, &int_txi_1);
+	R_INTC_RegistIntFunc(INTC_ID_TXI2, &int_txi_2);
 
-	R_INTC_Regist_Int_Func(INTC_ID_RXI0, &int_rxi_0);
-	R_INTC_Regist_Int_Func(INTC_ID_RXI1, &int_rxi_1);
-	R_INTC_Regist_Int_Func(INTC_ID_RXI2, &int_rxi_2);
+	R_INTC_RegistIntFunc(INTC_ID_RXI0, &int_rxi_0);
+	R_INTC_RegistIntFunc(INTC_ID_RXI1, &int_rxi_1);
+	R_INTC_RegistIntFunc(INTC_ID_RXI2, &int_rxi_2);
 }
 
 
