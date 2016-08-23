@@ -185,65 +185,19 @@ SECTIONS
         __code_spibsc_init_2_start__ = .;
         PROVIDE(__code_spibsc_init_2_start__ = .);
 
-        /* Reconfiguration Functions and application detection. */
-		*spibsc_init2.o (.text)
-		*spibsc_init2.o (.rodata)
-		*spibsc_init2.o (.data)
-        /* Simple assembler function to jump to users code. */
-		*user_prog_jmp.o (.text)
-		*user_prog_jmp.o (.rodata)
-		*user_prog_jmp.o (.data)
-		*spibsc_flash_api.o (.text)
-		*spibsc_flash_api.o (.rodata)
-		*spibsc_flash_api.o (.data)
-		*spibsc_flash_userdef.o (.text)
-		*spibsc_flash_userdef.o (.rodata)
-		*spibsc_flash_userdef.o (.data)
-		*spibsc_ioset_api.o (.text)
-		*spibsc_ioset_api.o (.rodata)
-		*spibsc_ioset_api.o (.data)
-		*spibsc_ioset_drv.o (.text)
-		*spibsc_ioset_drv.o (.rodata)
-		*spibsc_ioset_drv.o (.data)
-		*spibsc_ioset_userdef.o (.text)
-		*spibsc_ioset_userdef.o (.rodata)
-		*spibsc_ioset_userdef.o (.data)
 
-        *ff.o(.text)
-        *ff.o(.rodata)
-        *ff.o(.data)
 
-        *mmc.o(.text)
-        *mmc.o(.rodata)
-        *mmc.o(.data)
-
-        *io.o(.text)
-        *io.o(.rodata)
-        *io.o(.data)
-
-        *rspi.o(.text)
-        *rspi.o(.rodata)
-        *rspi.o(.data)
-
-        *sio_char.o(.text)
-        *sio_char.o(.rodata)
-        *sio_char.o(.data)
-
-        *intc_handler.o(.text)
-        *intc_handler.o(.rodata)
-        *intc_handler.o(.data)
-
-        *intc_userdef.o(.text)
-        *intc_userdef.o(.rodata)
-        *intc_userdef.o(.data)
-
-        *intc.o(.text)
-        *intc.o(.rodata)
-        *intc.o(.data)
-
-		/* All other code section (.text) go here */
+		/* All other .text, .data and .rodata goes here, as this section is the final one loaded in order for the main functionality to happen */
         *(.text)
-		
+
+
+        *(.rodata)
+        *(.rodata.*)
+        . = ALIGN(0x8);
+        *(.data)
+        *(.data.*)
+        *(.got.plt) *(.got)        
+        . = ALIGN(0x8);
 
         /* The following location is available in the program to be copied by init_init2.*/
         __code_spibsc_init_2_end__ = .;
@@ -254,18 +208,10 @@ SECTIONS
         PROVIDE(load3_end = .);
 	}
 
-    /* constant data section */
+    /* constant data section. I've emptied this out successfully - Rohan */
 	.rodata load3_end : AT (LOAD_MODULE3 + SIZEOF(.load3))
     {
-        *(.rodata)
-        *(.rodata.*)
-        . = ALIGN(0x8);
-        address_start_data_ROM = .;
-        *(.data)
-        *(.data.*)
-        *(.got.plt) *(.got)        
-        . = ALIGN(0x8);
-        address_end_data_ROM = .;
+
         PROVIDE(end = .);
         PROVIDE(rodata_end = .);
 	}
@@ -283,13 +229,6 @@ SECTIONS
         _end = .;
     }
 
-    /* ram data section */
-    .data address_end_data_ROM () : 
-    {
-		address_start_data_RAM = .;
-		.  += (address_end_data_ROM - address_start_data_ROM);
-		address_end_data_RAM = .;
-    }
     
 	.program_stack STACK_BASE :
 	{

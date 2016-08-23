@@ -302,6 +302,9 @@ void spibsc_init2(void)
 		uint8_t success = uartGetChar(UART_CHANNEL_PIC, &received);
 
 		if (success) {
+			io_put_number((unsigned int)received);
+
+			/*
 			// If we received the "I've finished sending everything" message, get out
 			if (received == 253) {
 				break;
@@ -312,6 +315,7 @@ void spibsc_init2(void)
 				updateFirmware();
 				break;
 			}
+			*/
 		}
 	}
 

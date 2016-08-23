@@ -235,6 +235,38 @@ void uartPrint(char const* output) {
 }
 
 
+char stringBufferUSB[100];
+
+static char* intToStringUSB(int32_t number) {
+	uint8_t minNumDigits = 1;
+	if (number == -2147483648) { // Special case that code below doesn't deal with
+		strcpy(stringBufferUSB, "-2147483648");
+		return stringBufferUSB;
+	}
+    uint8_t numDigits = 0;
+    uint8_t isNegative = (number < 0);
+    number = abs(number);
+    stringBufferUSB[11] = 0;
+    uint8_t charPos = 11;
+    while(number != 0 || numDigits < minNumDigits) {
+    	stringBufferUSB[--charPos] = 48 + (number % 10);
+        number /= 10;
+        numDigits++;
+    }
+    if (isNegative) stringBufferUSB[--charPos] = 45;
+    return stringBufferUSB + charPos;
+}
+
+void io_put_number(int32_t number) {
+	//return;
+	char* output = intToStringUSB(number);
+	while (*output != 0) {
+		uartPutChar(0, *output);
+		output++;
+	}
+	uartPutChar(0, 10);
+}
+
 
 
 uint16_t getInputBufferCount(uint8_t scifID) {
