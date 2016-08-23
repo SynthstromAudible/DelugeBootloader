@@ -285,7 +285,8 @@ void spibsc_init2(void)
 	setPinMux(6, 14, 5); // RX
 
 
-    //CPG.STBCR10 = 0x00u; // Enable clock to somewhere
+    //CPG.STBCR10 = 0x00u; // Enable clock to SPI, I think
+	CPG.STBCR12 = 0xF0u; // Enable SD host
 
 	// Not quite sure why, but we have to wait a while before sending out the UART, otherwise it sometimes doesn't get received by the PIC MCU (At least on Revision E)
 	// I did try lowering the baud rate of the UART and it didn't help
@@ -304,7 +305,6 @@ void spibsc_init2(void)
 		if (success) {
 			io_put_number((unsigned int)received);
 
-			/*
 			// If we received the "I've finished sending everything" message, get out
 			if (received == 253) {
 				break;
@@ -315,7 +315,6 @@ void spibsc_init2(void)
 				updateFirmware();
 				break;
 			}
-			*/
 		}
 	}
 
@@ -361,7 +360,6 @@ void updateFirmware() {
 	//uartPrintln("updating firmware");
 	setNumericDisplay("UPDA");
 
-	while(1);
 	FATFS fileSystem;
 
 	FRESULT result = f_mount(&fileSystem, "", 1);
