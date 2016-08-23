@@ -187,6 +187,17 @@ SECTIONS
 
 
 
+
+        /*
+        *spibsc_flash_api.o(.text)
+        *spibsc_flash_api.o(.rodata)
+        *spibsc_flash_api.o(.data)
+        
+        *spibsc_flash_userdef.o(.text)
+        *spibsc_flash_userdef.o(.rodata)
+        *spibsc_flash_userdef.o(.data)
+        */
+
 		/* All other .text, .data and .rodata goes here, as this section is the final one loaded in order for the main functionality to happen */
         *(.text)
 

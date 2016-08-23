@@ -23,7 +23,6 @@
 #include "r_typedefs.h"
 #include "fatfs/diskio.h"
 #include "fatfs/ff.h"
-#include "rspi/rspi.h"
 
 
 

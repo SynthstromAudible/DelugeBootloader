@@ -42,7 +42,6 @@ Includes <System Includes> , "Project Includes"
 #include "r_spibsc_ioset_api.h"
 #include "rza_io_regrw.h"
 #include "io.h"
-#include "rspi/rspi.h"
 #include "fatfs/ff.h"
 #include "sio_char.h"
 #include "peripheral_init_basic.h"
@@ -173,6 +172,8 @@ void boot_demo(void)
     psrc = (uint32_t *)DEF_USER_PROGRAM_SRC;
     pdst = (uint32_t *)*pcst_base;
     pexe = (uint32_t *)*pcex_base;
+    uartPrint("going to overwrite from: ");
+    io_put_number((int)pdst);
 
     size = (int32_t)((*pcen_base) - (*pcst_base));
 
@@ -259,7 +260,7 @@ const uint8_t letterSegments[26] = {
 void spibsc_init2(void)
 {
 
-	Peripheral_Basic_Init();
+	//Peripheral_Basic_Init();
 
 	R_INTC_Init();
 
@@ -325,6 +326,7 @@ void spibsc_init2(void)
 		char received;
 		uint8_t success = uartGetChar(UART_CHANNEL_PIC, &received);
 
+		/*
 		if (success) {
 			io_put_number((unsigned int)received);
 
@@ -340,6 +342,11 @@ void spibsc_init2(void)
 				break;
 			}
 		}
+		*/
+
+		updateFirmware();
+		uartPrintln("updated successfully");
+		break;
 	}
 
     check_image();
@@ -434,6 +441,8 @@ void setNumericDisplay(char const* text) {
 uint8_t loadingAnimationPos;
 
 void progressLoadingAnimation() {
+	setNumericDisplay("HI  ");
+	return;
 
 	char segmentsInWaiting[5];
 	memset(&segmentsInWaiting, 0, sizeof(segmentsInWaiting));
@@ -446,7 +455,7 @@ void progressLoadingAnimation() {
 
     loadingAnimationPos = (loadingAnimationPos + 1) % 10;
 
-	uartPutChar(UART_CHANNEL_PIC, 116);
+	uartPutChar(UART_CHANNEL_PIC, 224);
 	int i;
 	for (i = 0; i < 4; i++) {
 		uartPutChar(UART_CHANNEL_PIC, segmentsInWaiting[i]);
@@ -458,7 +467,8 @@ void updateFirmware() {
 	loadingAnimationPos = 0;
 
 	//uartPrintln("updating firmware");
-	setNumericDisplay("UPDA");
+	//setNumericDisplay("UPDA");
+	progressLoadingAnimation();
 
 	FATFS fileSystem;
 
@@ -471,7 +481,6 @@ void updateFirmware() {
 	uartPrintln("dir opened");
     if (result != FR_OK) goto cardError;
 	while (true) {
-		uartPrintln("looking at file");
 		FILINFO fno;
 		result = f_readdir(&dir, &fno); // Read a directory item
 		if (result != FR_OK || fno.fname[0] == 0) break; // Break on error or end of dir

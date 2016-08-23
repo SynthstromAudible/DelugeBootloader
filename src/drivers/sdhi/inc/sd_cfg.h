@@ -47,8 +47,8 @@
 /* ------------------------------------------------------
   Set the method of check SD Status
 --------------------------------------------------------*/
-#define SDCFG_HWINT
-//#define SDCFG_POLL
+//#define SDCFG_HWINT
+#define SDCFG_POLL // For some reason, using interrupts causes a weird incompatibility with the quad-spi code
 
 /* ------------------------------------------------------
   Set the method of data transfer
@@ -81,7 +81,7 @@
 /* ------------------------------------------------------
   Set the method to detect card
 --------------------------------------------------------*/
-#define SDCFG_CD_INT
+//#define SDCFG_CD_INT
 
 #ifdef SDCFG_CD_INT
     #ifndef SDCFG_HWINT
@@ -92,7 +92,7 @@
 /* ------------------------------------------------------
   Set the SD bus width
 --------------------------------------------------------*/
-//#define SDCFG_SDMODE_1BIT
+//#define SDCFG_SDMODE_1BIT // For some reason, using interrupts causes a weird incompatibility with the quad-spi code
 
 
 
