@@ -170,42 +170,7 @@ static int sddev_init_0(void)
     CPG.STBCR12 = 0xF0u;        /* [1], [1], [1], [1], SDHI00, SDHI01, SDHI10, SDHI11           */
     dummy_buf   = CPG.STBCR12;  /* (Dummy read)                                                 */
 
-    /* ---- setup PFC  ---- */
-    /* ---- P4_8 : SD_CD_0 ---- */
-    /* Port initialize */
-    rza_io_reg_write_16(&GPIO.PIBC4,  0, GPIO_PIBC4_PIBC48_SHIFT,   GPIO_PIBC4_PIBC48);
-    rza_io_reg_write_16(&GPIO.PBDC4,  0, GPIO_PBDC4_PBDC48_SHIFT,   GPIO_PBDC4_PBDC48);
-    rza_io_reg_write_16(&GPIO.PM4,    1, GPIO_PM4_PM48_SHIFT,       GPIO_PM4_PM48);
-    rza_io_reg_write_16(&GPIO.PMC4,   0, GPIO_PMC4_PMC48_SHIFT,     GPIO_PMC4_PMC48);
-    rza_io_reg_write_16(&GPIO.PIPC4,  0, GPIO_PIPC4_PIPC48_SHIFT,   GPIO_PIPC4_PIPC48);
-    /* Port mode : Multiplex mode                     */
-    /* Port function setting : 3rd multiplex function */
-    /* I/O control mode : Peripheral function         */
-    /* Bidirectional mode : Disable                   */
-    rza_io_reg_write_16(&GPIO.PBDC4,  0, GPIO_PBDC4_PBDC48_SHIFT,   GPIO_PBDC4_PBDC48);
-    rza_io_reg_write_16(&GPIO.PFC4,   0, GPIO_PFC4_PFC48_SHIFT,     GPIO_PFC4_PFC48);
-    rza_io_reg_write_16(&GPIO.PFCE4,  1, GPIO_PFCE4_PFCE48_SHIFT,   GPIO_PFCE4_PFCE48);
-    rza_io_reg_write_16(&GPIO.PFCAE4, 0, GPIO_PFCAE4_PFCAE48_SHIFT, GPIO_PFCAE4_PFCAE48);
-    rza_io_reg_write_16(&GPIO.PIPC4,  1, GPIO_PIPC4_PIPC48_SHIFT,   GPIO_PIPC4_PIPC48);
-    rza_io_reg_write_16(&GPIO.PMC4,   1, GPIO_PMC4_PMC48_SHIFT,     GPIO_PMC4_PMC48);
-
-    /* ---- P4_9 : SD_WP_0 ---- */
-    /* Port initialize */
-    rza_io_reg_write_16(&GPIO.PIBC4,  0, GPIO_PIBC4_PIBC49_SHIFT,   GPIO_PIBC4_PIBC49);
-    rza_io_reg_write_16(&GPIO.PBDC4,  0, GPIO_PBDC4_PBDC49_SHIFT,   GPIO_PBDC4_PBDC49);
-    rza_io_reg_write_16(&GPIO.PM4,    1, GPIO_PM4_PM49_SHIFT,       GPIO_PM4_PM49);
-    rza_io_reg_write_16(&GPIO.PMC4,   0, GPIO_PMC4_PMC49_SHIFT,     GPIO_PMC4_PMC49);
-    rza_io_reg_write_16(&GPIO.PIPC4,  0, GPIO_PIPC4_PIPC49_SHIFT,   GPIO_PIPC4_PIPC49);
-    /* Port mode : Multiplex mode                     */
-    /* Port function setting : 3rd multiplex function */
-    /* I/O control mode : Peripheral function         */
-    /* Bidirectional mode : Disable                   */
-    rza_io_reg_write_16(&GPIO.PBDC4,  0, GPIO_PBDC4_PBDC49_SHIFT,   GPIO_PBDC4_PBDC49);
-    rza_io_reg_write_16(&GPIO.PFC4,   0, GPIO_PFC4_PFC49_SHIFT,     GPIO_PFC4_PFC49);
-    rza_io_reg_write_16(&GPIO.PFCE4,  1, GPIO_PFCE4_PFCE49_SHIFT,   GPIO_PFCE4_PFCE49);
-    rza_io_reg_write_16(&GPIO.PFCAE4, 0, GPIO_PFCAE4_PFCAE49_SHIFT, GPIO_PFCAE4_PFCAE49);
-    rza_io_reg_write_16(&GPIO.PIPC4,  1, GPIO_PIPC4_PIPC49_SHIFT,   GPIO_PIPC4_PIPC49);
-    rza_io_reg_write_16(&GPIO.PMC4,   1, GPIO_PMC4_PMC49_SHIFT,     GPIO_PMC4_PMC49);
+    // I deleted pin mux stuff from here - it was for the wrong pins anyway. Rohan
 
     sddev_set_port_0(SD_PORT_SERIAL);
 
@@ -254,43 +219,7 @@ static int sddev_init_1(void)
     CPG.STBCR12 = 0xF0u;        /* [1], [1], [1], [1], SDHI00, SDHI01, SDHI10, SDHI11           */
     dummy_buf   = CPG.STBCR12;  /* (Dummy read)                                                 */
 
-    /* ---- setup PFC  ---- */
-    /* ---- P3_8 : SD_CD_1 ---- */
-    /* Port initialize */
-    rza_io_reg_write_16(&GPIO.PIBC3,  0, GPIO_PIBC3_PIBC38_SHIFT,   GPIO_PIBC3_PIBC38);
-    rza_io_reg_write_16(&GPIO.PBDC3,  0, GPIO_PBDC3_PBDC38_SHIFT,   GPIO_PBDC3_PBDC38);
-    rza_io_reg_write_16(&GPIO.PM3,    1, GPIO_PM3_PM38_SHIFT,       GPIO_PM3_PM38);
-    rza_io_reg_write_16(&GPIO.PMC3,   0, GPIO_PMC3_PMC38_SHIFT,     GPIO_PMC3_PMC38);
-    rza_io_reg_write_16(&GPIO.PIPC3,  0, GPIO_PIPC3_PIPC38_SHIFT,   GPIO_PIPC3_PIPC38);
-    /* Port mode : Multiplex mode                     */
-    /* Port function setting : 7th multiplex function */
-    /* I/O control mode : Peripheral function         */
-    /* Bidirectional mode : Disable                   */
-    rza_io_reg_write_16(&GPIO.PBDC3,  0, GPIO_PBDC3_PBDC38_SHIFT,   GPIO_PBDC3_PBDC38);
-    rza_io_reg_write_16(&GPIO.PFC3,   0, GPIO_PFC3_PFC38_SHIFT,     GPIO_PFC3_PFC38);
-    rza_io_reg_write_16(&GPIO.PFCE3,  1, GPIO_PFCE3_PFCE38_SHIFT,   GPIO_PFCE3_PFCE38);
-    rza_io_reg_write_16(&GPIO.PFCAE3, 1, GPIO_PFCAE3_PFCAE38_SHIFT, GPIO_PFCAE3_PFCAE38);
-    rza_io_reg_write_16(&GPIO.PIPC3,  1, GPIO_PIPC3_PIPC38_SHIFT,   GPIO_PIPC3_PIPC38);
-    rza_io_reg_write_16(&GPIO.PMC3,   1, GPIO_PMC3_PMC38_SHIFT,     GPIO_PMC3_PMC38);
-
-
-    /* ---- P3_9 : SD_WP_1 ---- */
-    /* Port initialize */
-    rza_io_reg_write_16(&GPIO.PIBC3,  0, GPIO_PIBC3_PIBC39_SHIFT,   GPIO_PIBC3_PIBC39);
-    rza_io_reg_write_16(&GPIO.PBDC3,  0, GPIO_PBDC3_PBDC39_SHIFT,   GPIO_PBDC3_PBDC39);
-    rza_io_reg_write_16(&GPIO.PM3,    1, GPIO_PM3_PM39_SHIFT,       GPIO_PM3_PM39);
-    rza_io_reg_write_16(&GPIO.PMC3,   0, GPIO_PMC3_PMC39_SHIFT,     GPIO_PMC3_PMC39);
-    rza_io_reg_write_16(&GPIO.PIPC3,  0, GPIO_PIPC3_PIPC39_SHIFT,   GPIO_PIPC3_PIPC39);
-    /* Port mode : Multiplex mode                     */
-    /* Port function setting : 7th multiplex function */
-    /* I/O control mode : Peripheral function         */
-    /* Bidirectional mode : Disable                   */
-    rza_io_reg_write_16(&GPIO.PBDC3,  0, GPIO_PBDC3_PBDC39_SHIFT,   GPIO_PBDC3_PBDC39);
-    rza_io_reg_write_16(&GPIO.PFC3,   0, GPIO_PFC3_PFC39_SHIFT,     GPIO_PFC3_PFC39);
-    rza_io_reg_write_16(&GPIO.PFCE3,  1, GPIO_PFCE3_PFCE39_SHIFT,   GPIO_PFCE3_PFCE39);
-    rza_io_reg_write_16(&GPIO.PFCAE3, 1, GPIO_PFCAE3_PFCAE39_SHIFT, GPIO_PFCAE3_PFCAE39);
-    rza_io_reg_write_16(&GPIO.PIPC3,  1, GPIO_PIPC3_PIPC39_SHIFT,   GPIO_PIPC3_PIPC39);
-    rza_io_reg_write_16(&GPIO.PMC3,   1, GPIO_PMC3_PMC39_SHIFT,     GPIO_PMC3_PMC39);
+    // I deleted pin mux stuff from here - it was for the wrong pins anyway. Rohan
 
     sddev_set_port_1(SD_PORT_SERIAL);
 
@@ -556,6 +485,7 @@ int sddev_set_port(int sd_port, int mode)
 ******************************************************************************/
 int sddev_set_port_0(int mode)
 {
+	return SD_OK; // This pin mux stuff is for the wrong pins anyway! Rohan
     if (mode == SD_PORT_SERIAL)
     {
         /* ---- P4_11 : SD_D0_0 ---- */
@@ -741,6 +671,7 @@ int sddev_set_port_0(int mode)
 ******************************************************************************/
 int sddev_set_port_1(int mode)
 {
+	return SD_OK; // This pin mux stuff is for the wrong pins anyway! Rohan
     if (mode == SD_PORT_SERIAL)
     {
         /* ---- P3_11 : SD_D0_1 ---- */

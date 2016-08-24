@@ -268,7 +268,8 @@ void spibsc_init2(void)
 	enable_fiq();
 
 	// Uart 1 for PIC / display
-	uartInit(UART_CHANNEL_PIC, 200000);
+	//uartInit(UART_CHANNEL_PIC, 200000);
+	uartInit(UART_CHANNEL_PIC, 31250);
 	setPinMux(3, 15, 5); // TX
 	setPinMux(1, 9, 3); // RX
 
@@ -441,9 +442,6 @@ void setNumericDisplay(char const* text) {
 uint8_t loadingAnimationPos;
 
 void progressLoadingAnimation() {
-	setNumericDisplay("HI  ");
-	return;
-
 	char segmentsInWaiting[5];
 	memset(&segmentsInWaiting, 0, sizeof(segmentsInWaiting));
 
@@ -466,13 +464,12 @@ void progressLoadingAnimation() {
 void updateFirmware() {
 	loadingAnimationPos = 0;
 
-	//uartPrintln("updating firmware");
-	//setNumericDisplay("UPDA");
-	progressLoadingAnimation();
+	setNumericDisplay("UPDA");
 
 	FATFS fileSystem;
 
 	FRESULT result = f_mount(&fileSystem, "", 1);
+	setNumericDisplay("2");
 	uartPrintln("mounted");
     if (result != FR_OK) goto cardError;
 	DIR dir;
