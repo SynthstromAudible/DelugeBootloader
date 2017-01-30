@@ -75,13 +75,13 @@ void io_put_char_buffered(uint8_t scifID, char_t charToSend);
 void initUartInterrupts();
 void io_init_scif (uint8_t scifID);
 uint16_t getInputBufferCount(uint8_t scifID);
-
 void uartInit(uint8_t scifID, uint32_t baudRate);
 void uartPutChar(uint8_t scifID, char_t charToSend);
 uint8_t uartGetChar(uint8_t scifID, char_t* readData);
 void uartPrintln(char const* output);
 void uartPrint(char const* output);
-void Userdef_SCIF_UART_Init (uint8_t channel, uint8_t mode, uint16_t cks, uint8_t scbrr);
+void Userdef_SCIF_UART_Init (uint8_t channel, uint8_t mode, uint16_t cks, uint32_t baudRate);
+void uartSetBaudRate(uint8_t scifID, uint32_t baudRate);
 
 
 

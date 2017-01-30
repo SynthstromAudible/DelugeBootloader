@@ -54,6 +54,8 @@ char_t rxBuffer[3][RX_BUFFER_SIZE];
 uint16_t rxBufferWrite[3];
 uint16_t rxBufferRead[3];
 
+// 1.65% lower, for SSCG
+#define XTAL_SPEED_MHZ 13007402.1875//13225625
 
 
 
@@ -61,9 +63,8 @@ uint16_t rxBufferRead[3];
 
 void uartInit(uint8_t scifID, uint32_t baudRate) {
 
-	uint8_t scbrr = round((float)66666666 / (32 * baudRate) - 1);
 	/* P1 clock=66.67MHz CKS=0 SCBRR=17 Bit rate error=0.46% => Baud rate=115200bps */
-	Userdef_SCIF_UART_Init(scifID, SCIF_UART_MODE_RW, SCIF_CKS_DIVISION_1, scbrr);
+	Userdef_SCIF_UART_Init(scifID, SCIF_UART_MODE_RW, SCIF_CKS_DIVISION_1, baudRate);
 
 	/*
     // Enable rx interrupts
@@ -90,7 +91,7 @@ void uartInit(uint8_t scifID, uint32_t baudRate) {
 
 
 
-void Userdef_SCIF_UART_Init (uint8_t channel, uint8_t mode, uint16_t cks, uint8_t scbrr)
+void Userdef_SCIF_UART_Init (uint8_t channel, uint8_t mode, uint16_t cks, uint32_t baudRate)
 {
     volatile uint8_t dummy_buf = 0u;
 
@@ -164,13 +165,12 @@ void Userdef_SCIF_UART_Init (uint8_t channel, uint8_t mode, uint16_t cks, uint8_
     (*(struct st_scif *)((uint32_t)&SCIF0 + channel * 0x800uL)).SCSMR = (cks & 0x0003u);
 
     /* Serial extension mode register (SCEMR2) setting
-    b7 BGDM - Baud rate generator double-speed mode  : Normal mode
+    b7 BGDM - Baud rate generator double-speed mode  : Double speed mode (increased by Rohan)
     b0 ABCS - Base clock select in asynchronous mode : Base clock is 16
     times the bit rate */
-    (*(struct st_scif *)((uint32_t)&SCIF0 + channel * 0x800uL)).SCEMR = 0x0000u;
+    (*(struct st_scif *)((uint32_t)&SCIF0 + channel * 0x800uL)).SCEMR = 0b10000000;
 
-    /* Bit rate register (SCBRR2) setting */
-    (*(struct st_scif *)((uint32_t)&SCIF0 + channel * 0x800uL)).SCBRR = scbrr;
+    uartSetBaudRate(channel, baudRate);
 
    /*
 	b10:b8 RSTRG - RTS output active trigger         : Initial value
@@ -189,6 +189,13 @@ void Userdef_SCIF_UART_Init (uint8_t channel, uint8_t mode, uint16_t cks, uint8_
     (*(struct st_scif *)((uint32_t)&SCIF0 + channel * 0x800uL)).SCSPTR |= 0x0003u;
 }
 
+void uartSetBaudRate(uint8_t scifID, uint32_t baudRate) {
+
+	uint8_t scbrr = round((float)(XTAL_SPEED_MHZ * 5) / (16 * baudRate) - 1);
+
+    /* Bit rate register (SCBRR2) setting */
+    (*(struct st_scif *)((uint32_t)&SCIF0 + scifID * 0x800uL)).SCBRR = scbrr;
+}
 
 void uartPutChar(uint8_t scifID, char_t charToSend) {
 

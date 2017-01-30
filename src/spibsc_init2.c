@@ -172,7 +172,7 @@ void boot_demo(void)
     psrc = (uint32_t *)DEF_USER_PROGRAM_SRC;
     pdst = (uint32_t *)*pcst_base;
     pexe = (uint32_t *)*pcex_base;
-    uartPrint("going to overwrite from: ");
+    //uartPrint("going to overwrite from: ");
     io_put_number((int)pdst);
 
     size = (int32_t)((*pcen_base) - (*pcst_base));
@@ -268,7 +268,6 @@ void spibsc_init2(void)
 	enable_fiq();
 
 	// Uart 1 for PIC / display
-	//uartInit(UART_CHANNEL_PIC, 200000);
 	uartInit(UART_CHANNEL_PIC, 31250);
 	setPinMux(3, 15, 5); // TX
 	setPinMux(1, 9, 3); // RX
@@ -321,13 +320,13 @@ void spibsc_init2(void)
 	// Tell PIC to re-send which buttons are pressed
 	uartPutChar(UART_CHANNEL_PIC, 22);
 
+	//uartPrintln("listening");
 	// Listen for a while
 	i = 50000;
 	while (i--) {
 		char received;
 		uint8_t success = uartGetChar(UART_CHANNEL_PIC, &received);
 
-		/*
 		if (success) {
 			io_put_number((unsigned int)received);
 
@@ -339,17 +338,13 @@ void spibsc_init2(void)
 			// If the shift button's down, then update the firmware
 			if (received == 152) {
 				updateFirmware();
-				uartPrintln("updated successfully");
+				//uartPrintln("updated successfully");
 				break;
 			}
 		}
-		*/
-
-		updateFirmware();
-		uartPrintln("updated successfully");
-		break;
 	}
 
+	//uartPrintln("finished listening");
     check_image();
     boot_demo();
 }
@@ -469,13 +464,13 @@ void updateFirmware() {
 	FATFS fileSystem;
 
 	FRESULT result = f_mount(&fileSystem, "", 1);
-	setNumericDisplay("2");
-	uartPrintln("mounted");
+	//setNumericDisplay("2");
+	//uartPrintln("mounted");
     if (result != FR_OK) goto cardError;
 	DIR dir;
 
 	result = f_opendir(&dir, "");
-	uartPrintln("dir opened");
+	//uartPrintln("dir opened");
     if (result != FR_OK) goto cardError;
 	while (true) {
 		FILINFO fno;
@@ -486,7 +481,7 @@ void updateFirmware() {
 		if (dotPos != 0 && !strcmp(dotPos, ".BIN")) {
 
 			// We found our .bin file!
-			uartPrintln("found bin file");
+			//uartPrintln("found bin file");
 
 			f_closedir(&dir);
 
@@ -497,7 +492,7 @@ void updateFirmware() {
 
 			// The file opened. Erase the flash memory
 			uint32_t numSectors = ((currentFile.fsize) >> 16) + 1;
-			uartPrintln(intToString(numSectors, 1));
+			//uartPrintln(intToString(numSectors, 1));
 
 			uint32_t eraseAddress = 0x80000;
 			while (numSectors-- && eraseAddress < 0x01000000) {
@@ -506,7 +501,7 @@ void updateFirmware() {
 				progressLoadingAnimation();
 			}
 
-			uartPrintln("erasing finished");
+			//uartPrintln("erasing finished");
 
 			char buffer[256];
 			uint32_t writeAddress = 0x80000;
@@ -533,7 +528,7 @@ void updateFirmware() {
 
 			// Success. It's all updated.
 			setNumericDisplay("DONE");
-			uartPrintln("copying finished");
+			//uartPrintln("copying finished");
 			// Go back into external SPI bus mode thing
 			spibsc_exmode(0);
 			return;
@@ -547,7 +542,7 @@ void updateFirmware() {
 
 	cardError:
 	setNumericDisplay("CARD");
-	uartPrintln("card error");
+	//uartPrintln("card error");
 	while (1) {}
 }
 
