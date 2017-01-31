@@ -46,14 +46,6 @@ Includes   <System Includes> , "Project Includes"
 #include "iodefine.h"
 
 
-
-char_t txBuffer[3][TX_BUFFER_SIZE];
-uint16_t txBufferWrite[3];
-volatile uint16_t txBufferRead[3];
-char_t rxBuffer[3][RX_BUFFER_SIZE];
-uint16_t rxBufferWrite[3];
-uint16_t rxBufferRead[3];
-
 // 1.65% lower, for SSCG
 #define XTAL_SPEED_MHZ 13007402.1875//13225625
 
@@ -230,11 +222,13 @@ uint8_t uartGetChar(uint8_t scifID, char_t* readData) {
 
 
 void uartPrintln(char const* output) {
+	return;
 	uartPrint(output);
 	uartPutChar(0, 10);
 }
 
 void uartPrint(char const* output) {
+	return;
 	while (*output != 0) {
 		uartPutChar(0, *output);
 		output++;
@@ -281,120 +275,9 @@ uint16_t getInputBufferCount(uint8_t scifID) {
 }
 
 
-// This will be called for RDF (when input buffer contains 14 bytes), but also for DR, which I think can (or always does?) happen
-// at every byte read?
-void rx_interrupt(uint8_t scifID) {
-	/* Disable SCIFx receive interrupts */
-	R_INTC_Disable(INTC_ID_RXI0 + scifID * 4);
-
-	while (getInputBufferCount(scifID) > 0) {
-		rxBuffer[scifID][rxBufferWrite[scifID]] = thisScif.SCFRDR;
-		rxBufferWrite[scifID] = (rxBufferWrite[scifID] + 1) % RX_BUFFER_SIZE;
-		// Beware! There is no checking against overflowing the RX buffer. Make sure it's big enough.
-	}
-
-	// Clear RDF and DR (DR can only be cleared after we've read some data)
-    uint16_t reg_value = thisScif.SCFSR;
-    reg_value = reg_value & (~SCIF2_SCFSR_RDF) & (~SCIF2_SCFSR_DR);
-    thisScif.SCFSR = reg_value;
-
-	/* Enable SCIFx receive interrupts */
-	R_INTC_Enable(INTC_ID_RXI0 + scifID * 4);
-}
-
-
-
-
-
 
 
 uint16_t getOutputBufferCount(uint8_t scifID) {
 	return (thisScif.SCFDR >> 8) & 31;
 }
-
-
-void tx_interrupt(uint8_t scifID) {
-	/* Disable SCIF0 transmit interrupts */
-	R_INTC_Disable(INTC_ID_TXI0 + scifID * 4);
-
-	// If there's more stuff to send, send it
-	if (txBufferWrite[scifID] != txBufferRead[scifID]) {
-		uint8_t i = 0;
-		while (i < 16 && txBufferRead[scifID] != txBufferWrite[scifID]) {
-
-		    /* Write the receiving data in TDR */
-		    thisScif.SCFTDR = txBuffer[scifID][txBufferRead[scifID]];
-
-		    txBufferRead[scifID] = (txBufferRead[scifID] + 1) % TX_BUFFER_SIZE;
-		    i++;
-		}
-
-	    /* Clear TDFE and TEND flag */
-	    thisScif.SCFSR &= (uint16_t)~0x0060u;
-
-	    // If that's *all* of it, then we don't need the interrupt either
-	    if (txBufferWrite[scifID] == txBufferRead[scifID]) goto disableTxInterrupt;
-	}
-
-	// Otherwise, disable the TX interrupt
-	else {
-		disableTxInterrupt:
-		// Pay attention here: it seems that to clear the interrupt, we have to *disable* the interrupt, like this.
-		// Or, if we had something else to send, we could send it and then clear TDFE ("after reading 1 from it"), and that would work too. So we can't
-		// leave the interrupt permanently enabled
-		thisScif.SCSCR = 0x0070u; // Rx interrupt, not Tx
-	}
-	//setOutputState(6, 1, !getOutputState(6, 1));
-
-
-	rza_io_reg_write_16(&thisScif.SCFSR, 0, SCIF2_SCFSR_TDFE_SHIFT, SCIF2_SCFSR_TDFE);
-
-	/* Enable SCIF0 transmit interrupts */
-	R_INTC_Enable(INTC_ID_TXI0 + scifID * 4);
-}
-
-
-
-void int_rxi_0 (uint32_t sense)
-{
-	rx_interrupt(0);
-}
-
-void int_txi_0 (uint32_t sense) {
-	tx_interrupt(0);
-}
-
-void int_rxi_1 (uint32_t sense)
-{
-	rx_interrupt(1);
-}
-
-void int_txi_1 (uint32_t sense) {
-	tx_interrupt(1);
-}
-
-void int_rxi_2 (uint32_t sense)
-{
-	rx_interrupt(2);
-}
-
-void int_txi_2 (uint32_t sense) {
-	tx_interrupt(2);
-}
-
-
-
-
-void initUartInterrupts() {
-	R_INTC_RegistIntFunc(INTC_ID_TXI0, &int_txi_0);
-	R_INTC_RegistIntFunc(INTC_ID_TXI1, &int_txi_1);
-	R_INTC_RegistIntFunc(INTC_ID_TXI2, &int_txi_2);
-
-	R_INTC_RegistIntFunc(INTC_ID_RXI0, &int_rxi_0);
-	R_INTC_RegistIntFunc(INTC_ID_RXI1, &int_rxi_1);
-	R_INTC_RegistIntFunc(INTC_ID_RXI2, &int_rxi_2);
-}
-
-
-/* End of File */
 
