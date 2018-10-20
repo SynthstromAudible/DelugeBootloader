@@ -259,7 +259,7 @@ static char* intToStringUSB(int32_t number) {
 }
 
 void io_put_number(int32_t number) {
-	//return;
+	return;
 	char* output = intToStringUSB(number);
 	while (*output != 0) {
 		uartPutChar(0, *output);

@@ -477,7 +477,7 @@ void updateFirmware() {
 		result = f_readdir(&dir, &fno); // Read a directory item
 		if (result != FR_OK || fno.fname[0] == 0) break; // Break on error or end of dir
 
-		char* dotPos = strrchr(fno.fname, '.');
+		char* dotPos = strchr(fno.fname, '.');
 		if (dotPos != 0 && !strcmp(dotPos, ".BIN")) {
 
 			// We found our .bin file!
