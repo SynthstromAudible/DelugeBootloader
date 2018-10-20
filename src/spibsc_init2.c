@@ -477,6 +477,8 @@ void updateFirmware() {
 		result = f_readdir(&dir, &fno); // Read a directory item
 		if (result != FR_OK || fno.fname[0] == 0) break; // Break on error or end of dir
 
+		if (fno.fname[0] == '_') continue; // Hidden files created by stupid Macs
+
 		char* dotPos = strchr(fno.fname, '.');
 		if (dotPos != 0 && !strcmp(dotPos, ".BIN")) {
 
