@@ -245,6 +245,18 @@ const uint8_t letterSegments[26] = {
 };
 
 
+const uint8_t numberSegments[10] = {
+    0x7E,
+    0x30,
+    0x6D,
+    0x79,
+    0x33,
+    0x5B,
+    0x5F,
+    0x70,
+    0x7F,
+    0x7B
+};
 
 
 /******************************************************************************
@@ -320,6 +332,8 @@ void spibsc_init2(void)
 	// Tell PIC to re-send which buttons are pressed
 	uartPutChar(UART_CHANNEL_PIC, 22);
 
+	uint8_t buttonsPressed = 0;
+
 	//uartPrintln("listening");
 	// Listen for a while
 	i = 50000;
@@ -330,19 +344,57 @@ void spibsc_init2(void)
 		if (success) {
 			io_put_number((unsigned int)received);
 
-			// If we received the "I've finished sending everything" message, get out
-			if (received == 253) {
-				break;
-			}
+			switch (received) {
 
-			// If the shift button's down, then update the firmware
-			if (received == 152) {
-				updateFirmware();
-				//uartPrintln("updated successfully");
+			// Pad combination for updating the bootloader itself
+			case 63:
+				buttonsPressed |= 0b1;
 				break;
+			case 126:
+				buttonsPressed |= 0b10;
+				break;
+			case 46:
+				buttonsPressed |= 0b100;
+				break;
+
+
+
+			// Shift button: update the firmware
+			case 152:
+				updateFirmware(false, 0x80000, 3670016, "UPDA"); // Max 3.5MB
+				goto bootUp;
+
+			// Pad to display bootloader version
+			case 0:
+				setNumericDisplay("0003");
+				while (1) {}
+				break;
+
+			// If we received the "I've finished sending everything" message, get out
+			case 253:
+				goto finishedListening;
 			}
 		}
 	}
+finishedListening:
+
+	// If they pressed the super secret combination to overwrite the bootloader itself...
+	if (buttonsPressed == 0b111) {
+		setNumericDisplay("SURE");
+
+		while (1) {
+			char received;
+			uint8_t success = uartGetChar(UART_CHANNEL_PIC, &received);
+			if (success) {
+				if (received == 175) break;
+			}
+
+		}
+
+		updateFirmware(1, 0, 0x80000 - 0x1000, "BOOT");
+	}
+
+bootUp:
 
 	//uartPrintln("finished listening");
     check_image();
@@ -430,7 +482,15 @@ void setNumericDisplay(char const* text) {
 	uartPutChar(UART_CHANNEL_PIC, 224);
 	int i;
 	for (i = 0; i < 4; i++) {
-		uartPutChar(UART_CHANNEL_PIC, letterSegments[*(text++) - 65]);
+		char output;
+		if (*text >= 'A') {
+			output = letterSegments[*text - 'A'];
+		}
+		else {
+			output = numberSegments[*text - '0'];
+		}
+		uartPutChar(UART_CHANNEL_PIC, output);
+		text++;
 	}
 }
 
@@ -456,17 +516,28 @@ void progressLoadingAnimation() {
 }
 
 
-void updateFirmware() {
-	loadingAnimationPos = 0;
+#define EXTERNAL_MEMORY_BEGIN 0x0C000000
+#define FLASH_WRITE_SIZE 256 // Bigger doesn't seem to work...
 
-	setNumericDisplay("UPDA");
+
+void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_t maxSize, char const* message) {
+	loadingAnimationPos = 0;
+	char const* errorMessage = "NONE";
+
+	setNumericDisplay(message);
+
+	userdef_bsc_cs2_init(); // Setup RAM
 
 	FATFS fileSystem;
 
 	FRESULT result = f_mount(&fileSystem, "", 1);
 	//setNumericDisplay("2");
 	//uartPrintln("mounted");
-    if (result != FR_OK) goto cardError;
+    if (result != FR_OK) {
+cardError:
+    	errorMessage = "CARD";
+		goto displayError;
+    }
 	DIR dir;
 
 	result = f_opendir(&dir, "");
@@ -477,7 +548,11 @@ void updateFirmware() {
 		result = f_readdir(&dir, &fno); // Read a directory item
 		if (result != FR_OK || fno.fname[0] == 0) break; // Break on error or end of dir
 
-		if (fno.fname[0] == '_') continue; // Hidden files created by stupid Macs
+		if (fno.fname[0] == '_') continue; // Avoid hidden files created by stupid Macs
+
+		// Only bootloader bin files should start with "BOOT"
+		uint8_t startsWithBoot = (!memcmp(fno.fname, "BOOT", 4) || !memcmp(fno.fname, "boot", 4)) ? 1 : 0;
+		if (startsWithBoot != doingBootloader) continue;
 
 		char* dotPos = strchr(fno.fname, '.');
 		if (dotPos != 0 && !strcmp(dotPos, ".BIN")) {
@@ -490,14 +565,36 @@ void updateFirmware() {
 			FIL currentFile;
 			// Open the file
 			result = f_open(&currentFile, fno.fname, FA_READ);
-			if (result != FR_OK) goto fileError;
+			if (result != FR_OK) {
+fileError:
+				errorMessage = "FILE";
+				goto displayError;
+			}
 
-			// The file opened. Erase the flash memory
-			uint32_t numSectors = ((currentFile.fsize) >> 16) + 1;
+			uint32_t fileSize = currentFile.fsize;
+
+			// But make sure it's not too big
+			if (fileSize > maxSize) {
+				goto fileError;
+			}
+
+
+			// The file opened. Copy it to RAM
+			UINT numBytesRead;
+			result = f_read(&currentFile, EXTERNAL_MEMORY_BEGIN, fileSize, &numBytesRead);
+			if (result != FR_OK || numBytesRead != fileSize) goto fileError;
+			f_close(&currentFile);
+
+
+			// Erase the flash memory
+			uint32_t numFlashSectors = ((fileSize - 1) >> 16) + 1;
 			//uartPrintln(intToString(numSectors, 1));
 
-			uint32_t eraseAddress = 0x80000;
-			while (numSectors-- && eraseAddress < 0x01000000) {
+			uint32_t eraseAddress;
+
+eraseFlash:
+			eraseAddress = startFlashAddress;
+			while (numFlashSectors-- && eraseAddress < 0x01000000) {
 				R_SFLASH_EraseSector(eraseAddress, 0, SPIBSC_CMNCR_BSZ_SINGLE, 1, SPIBSC_OUTPUT_ADDR_24);
 				eraseAddress += 0x10000; // 64K
 				progressLoadingAnimation();
@@ -505,27 +602,28 @@ void updateFirmware() {
 
 			//uartPrintln("erasing finished");
 
-			char buffer[256];
-			uint32_t writeAddress = 0x80000;
 
-			uint32_t i = 0;
+			// Copy new program from RAM to flash memory
+			uint32_t flashWriteAddress = startFlashAddress;
+			uint8_t* readAddress = EXTERNAL_MEMORY_BEGIN;
 
-			while (writeAddress < 0x01000000) {
-				if (!(i--)) {
-					//uartPrintln(intToString(writeAddress, 1));
-					i = 16;
+			while (true) {
+
+				int bytesLeft = startFlashAddress + fileSize - flashWriteAddress;
+				if (bytesLeft <= 0) break;
+
+				int bytesToWrite = bytesLeft;
+				if (bytesToWrite > FLASH_WRITE_SIZE) bytesToWrite = FLASH_WRITE_SIZE;
+
+				int32_t error = R_SFLASH_ByteProgram(flashWriteAddress, readAddress, bytesToWrite, 0, SPIBSC_CMNCR_BSZ_SINGLE, SPIBSC_1BIT, SPIBSC_OUTPUT_ADDR_24);
+				if (error) {
+					setNumericDisplay("RETR");
+					goto eraseFlash;
 				}
-				UINT numBytesRead;
-				result = f_read(&currentFile, (UINT*)buffer, 256, &numBytesRead);
-				if (result != FR_OK || numBytesRead == 0) break;
 
-				R_SFLASH_ByteProgram(writeAddress, buffer, numBytesRead, 0, SPIBSC_CMNCR_BSZ_SINGLE, SPIBSC_1BIT, SPIBSC_OUTPUT_ADDR_24);
-				//R_SFLASH_ByteProgram(writeAddress, buffer, 256, 0, SPIBSC_CMNCR_BSZ_SINGLE, SPIBSC_1BIT, SPIBSC_OUTPUT_ADDR_24);
-				//R_SFLASH_ByteProgram(writeAddress, buf, 5, 0, SPIBSC_CMNCR_BSZ_SINGLE, SPIBSC_1BIT, SPIBSC_OUTPUT_ADDR_24);
-				if (numBytesRead != 256) break;
-				writeAddress += 256;
-				//if (writeAddress & 0b00000000000000000000011111111111 == 0) progressLoadingAnimation();
-				if ((writeAddress >> 8) % 16 == 0) progressLoadingAnimation();
+				flashWriteAddress += FLASH_WRITE_SIZE;
+				readAddress += FLASH_WRITE_SIZE;
+				if (((flashWriteAddress >> 8) & 31) == 0) progressLoadingAnimation();
 			}
 
 			// Success. It's all updated.
@@ -537,16 +635,118 @@ void updateFirmware() {
 		}
 	}
 	f_closedir(&dir);
-
-	fileError:
-	setNumericDisplay("FILE");
-	while (1) {}
-
-	cardError:
-	setNumericDisplay("CARD");
-	//uartPrintln("card error");
+displayError:
+	setNumericDisplay(errorMessage);
 	while (1) {}
 }
 
+
+
+
+void userdef_bsc_cs2_init()
+{
+
+	setPinMux(3, 0, 1); // A1
+	setPinMux(3, 1, 1); // A1
+	setPinMux(3, 2, 1); // A1
+	setPinMux(3, 3, 1); // A1
+	setPinMux(3, 4, 1); // A1
+	setPinMux(3, 5, 1); // A1
+	setPinMux(3, 6, 1); // A1
+	setPinMux(3, 7, 1); // A1
+	setPinMux(3, 8, 1); // A1
+	setPinMux(3, 9, 1); // A1
+	setPinMux(3, 10, 1); // A1
+	setPinMux(3, 11, 1); // A1
+	setPinMux(3, 12, 1); // A1
+	setPinMux(3, 13, 1); // A1
+	setPinMux(3, 14, 1); // A1
+
+	// D pins
+	setPinMux(5, 0, 1);
+	setPinMux(5, 1, 1);
+	setPinMux(5, 2, 1);
+	setPinMux(5, 3, 1);
+	setPinMux(5, 4, 1);
+	setPinMux(5, 5, 1);
+	setPinMux(5, 6, 1);
+	setPinMux(5, 7, 1);
+	setPinMux(5, 8, 1);
+	setPinMux(5, 9, 1);
+	setPinMux(5, 10, 1);
+	setPinMux(5, 11, 1);
+	setPinMux(5, 12, 1);
+	setPinMux(5, 13, 1);
+	setPinMux(5, 14, 1);
+	setPinMux(5, 15, 1);
+
+	//setPinMux(7, 8, 1); // CS2
+	setPinMux(2, 0, 1); // CS3
+	setPinMux(2, 1, 1); // RAS
+	setPinMux(2, 2, 1); // CAS
+	setPinMux(2, 3, 1); // CKE
+	setPinMux(2, 4, 1); // WE0
+	setPinMux(2, 5, 1); // WE1
+	setPinMux(2, 6, 1); // RD/!WR
+
+
+
+    /* ==== CS2BCR settings ==== */
+    /* Idle Cycles between Write-read Cycles  */
+    /* and Write-write Cycles : 0 idle cycles */
+    /* Memory type :SDRAM                     */
+    /* Data Bus Size : 16-bit                 */
+    BSC.CS2BCR = 0x00004C00ul;
+
+    /* ==== CS3BCR settings ==== */
+    /* SDRAM WORKAROUND - see Note */
+    /* Idle Cycles between Write-read Cycles  */
+    /* and Write-write Cycles : 0 idle cycles */
+    /* Memory type :SDRAM                     */
+    /* Data Bus Size : 16-bit                 */
+    BSC.CS3BCR = 0x00004C00ul;
+
+    /* ==== CS2/3WCR settings ==== */
+    /* Precharge completion wait cycles: 1 cycle     */
+    /* Wait cycles between ACTV command              */
+    /* and READ(A)/WRITE(A) command : 1 cycles       */
+    /* CAS latency for Area 3 : 2 cycles             */
+    /* Auto-precharge startup wait cycles : 2 cycles */
+    /* Idle cycles from REF command/self-refresh     */
+    /* Release to ACTV/REF/MRS command : 5 cycles    */
+    BSC.CS3WCR = 0x00004492ul;
+
+    /* SDRAM WORKAROUND - see Note */
+    BSC.CS2WCR = 0x00000480ul;
+
+    /* ==== SDCR settings ==== */
+    /* SDRAM WORKAROUND - see Note*/
+    /* Row address for Area 2 : 13-bit    */
+    /* Column Address for Area 2 : 9-bit  */
+    /* Refresh Control :Refresh           */
+    /* RMODE :Auto-refresh is performed   */
+    /* BACTV :Auto-precharge mode         */
+    /* Row address for Area 3 : 13-bit    */
+    /* Column Address for Area 3 : 9-bit  */
+    BSC.SDCR = 0x00110812ul; // CS3 cols 10-bit. For 64MB chip
+
+    /* ==== RTCOR settings ==== */
+    /* 7.64usec / 240nsec              */
+    /*   = 128(0x80)cycles per refresh */
+    BSC.RTCOR = 0xA55A0080ul;
+
+    /* ==== RTCSR settings ==== */
+    /* initialisation sequence start */
+    /* Clock select B-phy/4          */
+    /* Refresh count :Once           */
+    BSC.RTCSR = 0xA55A0008ul;
+
+    /* ==== SDRAM Mode Register ==== */
+    /* Burst read (burst length 1)./Burst write */
+    //SDRAM_MODE_CS2 = 0;
+
+    /* SDRAM WORKAROUND - see Note */
+    //SDRAM_MODE_CS3 = 0;
+}
 
 /* End of File */
