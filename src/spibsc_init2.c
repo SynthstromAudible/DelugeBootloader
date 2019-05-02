@@ -274,11 +274,22 @@ uint8_t bigBuffer[1 << 19]; // Half a meg
 #define EXTERNAL_MEMORY_BEGIN 0x0C000000
 #define FLASH_WRITE_SIZE 256 // Bigger doesn't seem to work...
 
+extern void L1CacheInit(void);
+extern void enable_mmu(void);
 
 void spibsc_init2(void)
 {
 
-	//Peripheral_Basic_Init();
+	//enable_mmu(); // Nope, causes crash
+
+	//Peripheral_Basic_Init(); // Makes clocks go way fast - oh except it actually doesn't help here
+
+	enableAllModuleClocks();
+
+	L1CacheInit(); // Enable caching. Speeds up the RAM test a little bit - I guess because stuff can be pre-fetched and stuff
+
+	userdef_bsc_cs2_init(); // Setup external RAM
+
 
 	R_INTC_Init();
 
@@ -303,9 +314,6 @@ void spibsc_init2(void)
     	error_image();
     }
 
-	//enable_irq();
-	//enable_fiq();
-
     // SD host interface
 	setPinMux(7, 0, 3); // CD
 	setPinMux(7, 1, 3); // WP
@@ -323,7 +331,6 @@ void spibsc_init2(void)
 	setPinMux(6, 15, 5); // TX
 	setPinMux(6, 14, 5); // RX
 
-	enableAllModuleClocks();
 
 
 
@@ -373,6 +380,12 @@ void spibsc_init2(void)
 			// Pad to display bootloader version
 			case 0:
 				setNumericDisplay("0003");
+				while (1) {}
+				break;
+
+			// Pad to test RAM
+			case 80:
+				ramTest();
 				while (1) {}
 				break;
 
@@ -489,7 +502,11 @@ void setNumericDisplay(char const* text) {
 	int i;
 	for (i = 0; i < 4; i++) {
 		char output;
-		if (*text >= 'A') {
+
+		if (*text == ' ') {
+			output = 0;
+		}
+		else if (*text >= 'A') {
 			output = letterSegments[*text - 'A'];
 		}
 		else {
@@ -528,8 +545,6 @@ void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_
 	char const* errorMessage = "NONE";
 
 	setNumericDisplay(message);
-
-	userdef_bsc_cs2_init(); // Setup RAM
 
 	FATFS fileSystem;
 
@@ -626,7 +641,7 @@ eraseFlash:
 
 				flashWriteAddress += FLASH_WRITE_SIZE;
 				readAddress += FLASH_WRITE_SIZE;
-				if (((flashWriteAddress >> 8) & 31) == 0) progressLoadingAnimation();
+				if (((flashWriteAddress >> 8) & 63) == 0) progressLoadingAnimation();
 			}
 
 			// Success. It's all updated.
@@ -752,4 +767,42 @@ void userdef_bsc_cs2_init()
     //SDRAM_MODE_CS3 = 0;
 }
 
+
+void ramTest() {
+
+	setNumericDisplay("RAM ");
+
+	loadingAnimationPos = 0;
+
+	uint32_t* address;
+
+	// Write RAM
+	address = (uint32_t*)0x0C000000;
+	while (address != (uint32_t*)0x10000000) {
+		*address = (uint32_t)address;
+		address++;
+
+		if (address >= (uint32_t*)0x0D000000 && !((uint32_t)address & (uint32_t)((1 << 20) - 1))) { // Every megabyte
+			progressLoadingAnimation();
+		}
+	}
+
+
+	// Read RAM
+	address = (uint32_t*)0x0C000000;
+	while (address != (uint32_t*)0x10000000) {
+
+		if (*address != (uint32_t)address) {
+			setNumericDisplay("FAIL");
+			while (1) {}
+		}
+		address++;
+
+		if (!((uint32_t)address & (uint32_t)((1 << 20) - 1))) { // Every megabyte
+			progressLoadingAnimation();
+		}
+	}
+
+	setNumericDisplay("GOOD");
+}
 /* End of File */
