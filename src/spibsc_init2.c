@@ -269,6 +269,12 @@ const uint8_t numberSegments[10] = {
 #define UART_CHANNEL_MIDI 0
 #define UART_CHANNEL_PIC 1
 
+uint8_t bigBuffer[1 << 19]; // Half a meg
+
+#define EXTERNAL_MEMORY_BEGIN 0x0C000000
+#define FLASH_WRITE_SIZE 256 // Bigger doesn't seem to work...
+
+
 void spibsc_init2(void)
 {
 
@@ -361,7 +367,7 @@ void spibsc_init2(void)
 
 			// Shift button: update the firmware
 			case 152:
-				updateFirmware(false, 0x80000, 3670016, "UPDA"); // Max 3.5MB
+				updateFirmware(false, 0x80000, 3670016, "UPDA", EXTERNAL_MEMORY_BEGIN); // Max 3.5MB
 				goto bootUp;
 
 			// Pad to display bootloader version
@@ -391,7 +397,7 @@ finishedListening:
 
 		}
 
-		updateFirmware(1, 0, 0x80000 - 0x1000, "BOOT");
+		updateFirmware(1, 0, 0x80000 - 0x1000, "BOOT", bigBuffer);
 	}
 
 bootUp:
@@ -516,11 +522,8 @@ void progressLoadingAnimation() {
 }
 
 
-#define EXTERNAL_MEMORY_BEGIN 0x0C000000
-#define FLASH_WRITE_SIZE 256 // Bigger doesn't seem to work...
 
-
-void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_t maxSize, char const* message) {
+void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_t maxSize, char const* message, uint8_t* buffer) {
 	loadingAnimationPos = 0;
 	char const* errorMessage = "NONE";
 
@@ -581,7 +584,7 @@ fileError:
 
 			// The file opened. Copy it to RAM
 			UINT numBytesRead;
-			result = f_read(&currentFile, EXTERNAL_MEMORY_BEGIN, fileSize, &numBytesRead);
+			result = f_read(&currentFile, buffer, fileSize, &numBytesRead);
 			if (result != FR_OK || numBytesRead != fileSize) goto fileError;
 			f_close(&currentFile);
 
@@ -605,7 +608,7 @@ eraseFlash:
 
 			// Copy new program from RAM to flash memory
 			uint32_t flashWriteAddress = startFlashAddress;
-			uint8_t* readAddress = EXTERNAL_MEMORY_BEGIN;
+			uint8_t* readAddress = buffer;
 
 			while (true) {
 
