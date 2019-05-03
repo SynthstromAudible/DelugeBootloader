@@ -327,10 +327,11 @@ void spibsc_init2(void)
     //initUartInterrupts();
 
 	// Uart 0 for MIDI
+	/*
 	uartInit(UART_CHANNEL_MIDI, 31250);
 	setPinMux(6, 15, 5); // TX
 	setPinMux(6, 14, 5); // RX
-
+	*/
 
 
 
@@ -339,7 +340,7 @@ void spibsc_init2(void)
 
 	// Not quite sure why, but we have to wait a while before sending out the UART, otherwise it sometimes doesn't get received by the PIC MCU (At least on Revision E)
 	// I did try lowering the baud rate of the UART and it didn't help
-	uint32_t i = 600000; // 400000 works usually, but even 500000 seemed not to work one time. 200000 is too low
+	uint32_t i = 1200000; // 400000 works usually, but even 500000 seemed not to work one time. 200000 is too low
 	while (i--) {}
 
 	// Tell PIC to re-send which buttons are pressed
@@ -349,7 +350,7 @@ void spibsc_init2(void)
 
 	//uartPrintln("listening");
 	// Listen for a while
-	i = 50000;
+	i = 100000;
 	while (i--) {
 		char received;
 		uint8_t success = uartGetChar(UART_CHANNEL_PIC, &received);
