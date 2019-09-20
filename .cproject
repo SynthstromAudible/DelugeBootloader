@@ -56,12 +56,10 @@
 								<option id="com.renesas.cdt.core.Compiler.option.device.790356805" name="Device" superClass="com.renesas.cdt.core.Compiler.option.device" value="R7S72100" valueType="string"/>
 								<option id="com.renesas.cdt.core.Compiler.option.deviceShortName.1010658356" name="DeviceShortName" superClass="com.renesas.cdt.core.Compiler.option.deviceShortName" value="R7S72100" valueType="string"/>
 								<option id="com.renesas.cdt.core.Compiler.option.CPUSeries.255482220" name="Cpu Series" superClass="com.renesas.cdt.core.Compiler.option.CPUSeries" value="" valueType="string"/>
-								<option id="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.128826593" name="Optimization Level" superClass="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel" value="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.custom" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.128826593" name="Optimization Level" superClass="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel" value="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.none" valueType="enumerated"/>
 								<option id="com.renesas.cdt.core.Compiler.option.misc19.366879919" name="Place each function into its own section in the output file(-ffunction-sections)" superClass="com.renesas.cdt.core.Compiler.option.misc19" value="false" valueType="boolean"/>
 								<option id="com.renesas.cdt.core.Compiler.option.misc53.1825336026" name="Place each data item into its own section in the output file(-fdata-sections)" superClass="com.renesas.cdt.core.Compiler.option.misc53" value="false" valueType="boolean"/>
-								<option id="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions.586674668" name="User defined options" superClass="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions" valueType="stringList">
-									<listOptionValue builtIn="false" value="-O2"/>
-								</option>
+								<option id="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions.586674668" name="User defined options" superClass="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions" valueType="stringList"/>
 								<inputType id="%Base.Compiler.C.InputType.Id.1124817566" name="C Input" superClass="%Base.Compiler.C.InputType.Id"/>
 								<inputType id="Base.Compiler.CPP.InputType.Id.1395217527" name="C++ Input" superClass="Base.Compiler.CPP.InputType.Id"/>
 							</tool>
@@ -91,44 +89,55 @@
 									<listOptionValue builtIn="false" value="-estart"/>
 								</option>
 								<option id="com.renesas.cdt.core.Linker.option.linkOrderList.610442099" name="" superClass="com.renesas.cdt.core.Linker.option.linkOrderList" valueType="stringList">
-									<listOptionValue builtIn="false" value="&quot;.\src\ascii.o&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;.\src\peripheral_init_basic.o&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;.\src\rza_io_regrw.o&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;.\src\sio_char.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\siorw.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/src\gnu_io.o&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/src\resetprg.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\access.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\initsct.o&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\irqfiq_handler.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\isr.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\l1_cache_init.o&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\reset_handler.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\reset_program.o&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\start.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\ttb_init.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_adc.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_bsc.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_bsc_userdef.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_gpio.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_intc.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_intc_handler.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_intc_userdef.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_lcd_pmod.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_logo.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_main.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_riic.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_riic_rskrza1h.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_riic_userdef.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_rsk_switches.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_rspi.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_rspi_user.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_scif_uart.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_scif_userdef.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\src\r_stb.o&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\mirror_start.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/fatfs\ff.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/userdef\sd_dev_dmacdrv.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/userdef\sd_dev_low.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/sdio\sdio_direct.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/sdio\sdio_int.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/sdio\sdio_read.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/sdio\sdio_trns.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/sdio\sdio_util.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/sdio\sdio_write.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_cd.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_cmd.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_format.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_init.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_int.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_mount.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_read.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_trns.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_upcase_table.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_util.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/sdhi/src/sd/access\sd_write.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/intc\intc.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/intc\intc_handler.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src/drivers/intc\intc_userdef.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\init_spibsc_init1_section.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\init_spibsc_init2_section.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\intc_userdef.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\io.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\mmc.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\spibsc_flash_api.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\spibsc_flash_userdef.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\spibsc_init1.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\spibsc_init2.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\spibsc_ioset_api.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\spibsc_ioset_drv.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\src\spibsc_ioset_userdef.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\inc\access.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\inc\l1_cache_init.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\invalidate.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\user_prog_jmp.o&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;.\compiler_specific/asm\vbar_init.o&quot;"/>
 								</option>
-								<option command="--gc-sections" id="com.renesas.cdt.core.Linker.option.misc19.290773474" name="Enable garbage collection of unused input sections(-gc-sections)" superClass="com.renesas.cdt.core.Linker.option.misc19" value="false" valueType="boolean"/>
+								<option command="--gc-sections" id="com.renesas.cdt.core.Linker.option.misc19.290773474" name="Enable garbage collection of unused input sections(-gc-sections)" superClass="com.renesas.cdt.core.Linker.option.misc19" value="true" valueType="boolean"/>
 								<option id="com.renesas.cdt.core.Linker.option.additionalInputFiles.44298432" name="Additional input files" superClass="com.renesas.cdt.core.Linker.option.additionalInputFiles"/>
 								<option command="-s" id="com.renesas.cdt.core.Linker.option.misc16.1477253342" name="Omit all symbol information from the output file(-s)" superClass="com.renesas.cdt.core.Linker.option.misc16" value="false" valueType="boolean"/>
 								<option command="" id="com.renesas.cdt.rz.Release.Linker.option.linkUsingGcc.1575812364" name="Link using &quot;gcc&quot; command instead of &quot;ld&quot; command" superClass="com.renesas.cdt.rz.Release.Linker.option.linkUsingGcc" value="false" valueType="boolean"/>
@@ -265,5 +274,12 @@
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/RZ_A1H_QSPI_LOADER"/>
+		</configuration>
+		<configuration configurationName="HardwareDebug">
+			<resource resourceType="PROJECT" workspacePath="/RZ_A1H_QSPI_LOADER"/>
+		</configuration>
+	</storageModule>
 </cproject>
