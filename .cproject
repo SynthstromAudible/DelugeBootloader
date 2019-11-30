@@ -56,10 +56,12 @@
 								<option id="com.renesas.cdt.core.Compiler.option.device.790356805" name="Device" superClass="com.renesas.cdt.core.Compiler.option.device" value="R7S72100" valueType="string"/>
 								<option id="com.renesas.cdt.core.Compiler.option.deviceShortName.1010658356" name="DeviceShortName" superClass="com.renesas.cdt.core.Compiler.option.deviceShortName" value="R7S72100" valueType="string"/>
 								<option id="com.renesas.cdt.core.Compiler.option.CPUSeries.255482220" name="Cpu Series" superClass="com.renesas.cdt.core.Compiler.option.CPUSeries" value="" valueType="string"/>
-								<option id="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.128826593" name="Optimization Level" superClass="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel" value="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.none" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.128826593" name="Optimization Level" superClass="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel" value="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.custom" valueType="enumerated"/>
 								<option id="com.renesas.cdt.core.Compiler.option.misc19.366879919" name="Place each function into its own section in the output file(-ffunction-sections)" superClass="com.renesas.cdt.core.Compiler.option.misc19" value="false" valueType="boolean"/>
 								<option id="com.renesas.cdt.core.Compiler.option.misc53.1825336026" name="Place each data item into its own section in the output file(-fdata-sections)" superClass="com.renesas.cdt.core.Compiler.option.misc53" value="false" valueType="boolean"/>
-								<option id="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions.586674668" name="User defined options" superClass="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions" valueType="stringList"/>
+								<option id="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions.586674668" name="User defined options" superClass="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions" valueType="stringList">
+									<listOptionValue builtIn="false" value="-O2"/>
+								</option>
 								<inputType id="%Base.Compiler.C.InputType.Id.1124817566" name="C Input" superClass="%Base.Compiler.C.InputType.Id"/>
 								<inputType id="Base.Compiler.CPP.InputType.Id.1395217527" name="C++ Input" superClass="Base.Compiler.CPP.InputType.Id"/>
 							</tool>
@@ -142,7 +144,7 @@
 								<option command="-s" id="com.renesas.cdt.core.Linker.option.misc16.1477253342" name="Omit all symbol information from the output file(-s)" superClass="com.renesas.cdt.core.Linker.option.misc16" value="false" valueType="boolean"/>
 								<option command="" id="com.renesas.cdt.rz.Release.Linker.option.linkUsingGcc.1575812364" name="Link using &quot;gcc&quot; command instead of &quot;ld&quot; command" superClass="com.renesas.cdt.rz.Release.Linker.option.linkUsingGcc" value="false" valueType="boolean"/>
 								<option id="com.renesas.cdt.core.Linker.option.commandFileOverride.1012247503" name="Command file overide" superClass="com.renesas.cdt.core.Linker.option.commandFileOverride" value="com.renesas.cdt.core.Linker.option.commandFileOverride.externalLinkerScript" valueType="enumerated"/>
-								<option command=" -T&quot;E:/Renesas e2 workspace/RZ_A1H_QSPI_LOADER\Release\LinkerSubCommand.tmp&quot; -T" id="com.renesas.cdt.core.Linker.option.file.109457764" name="File" superClass="com.renesas.cdt.core.Linker.option.file" value="&quot;${workspace_loc:/${ProjName}/compiler_specific/GNU_e2studio-QSPI_SpSb.ld}&quot;" valueType="string"/>
+								<option command=" -T&quot;D:/Renesas e2 workspace/RZ_A1H_QSPI_LOADER\Release\LinkerSubCommand.tmp&quot; -T" id="com.renesas.cdt.core.Linker.option.file.109457764" name="File" superClass="com.renesas.cdt.core.Linker.option.file" value="&quot;${workspace_loc:/${ProjName}/compiler_specific/GNU_e2studio-QSPI_SpSb.ld}&quot;" valueType="string"/>
 								<option command="-S" id="com.renesas.cdt.rz.Release.Linker.option.omitDebuggerSymbol.774903191" name="Omit debugger symbol information from the output file(-S)" superClass="com.renesas.cdt.rz.Release.Linker.option.omitDebuggerSymbol" value="false" valueType="boolean"/>
 							</tool>
 							<tool command="arm-none-eabi-objcopy" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG}${OUTPUT_PREFIX} ${INPUTS}${OUTPUT}" errorParsers="" id="com.renesas.cdt.rz.release.win32.tool.objcopy.Id.799707755" name="Objcopy" superClass="com.renesas.cdt.rz.release.win32.tool.objcopy.Id"/>

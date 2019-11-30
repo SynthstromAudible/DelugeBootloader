@@ -33,12 +33,9 @@
 *               : 21.10.2014 1.00
 *******************************************************************************/
 
-// We manually enable optimization for this file only. Beware - setting it for the whole project appears to work, and makes the file nice and small, but just sometimes,
-// the RAM test will fail and other weird problems, like programming via JTAG won't work sometimes.
-// Also beware - for some reason, when fiddling with such settings, the "garbage collection" linker option keeps disabling itself. It should be on, but I don't think it makes a
+// Beware - for some reason, when fiddling with such settings, the "garbage collection" linker option keeps disabling itself. It should be on, but I don't think it makes a
 // huge difference.
-#pragma GCC push_options
-#pragma GCC optimize ("O2")
+
 
 /******************************************************************************
 Includes <System Includes> , "Project Includes"
@@ -293,7 +290,7 @@ void spibsc_init2(void)
 
 	enableAllModuleClocks();
 
-	L1CacheInit(); // Enable caching. Speeds up the RAM test a little bit - I guess because stuff can be pre-fetched and stuff
+	//L1CacheInit(); // Enable caching. Speeds up the RAM test a little bit - I guess because stuff can be pre-fetched and stuff
 
 	userdef_bsc_cs2_init(); // Setup external RAM
 
@@ -387,7 +384,7 @@ void spibsc_init2(void)
 
 			// Pad to display bootloader version
 			case 0:
-				setNumericDisplay("0004");
+				setNumericDisplay("TES2");
 				while (1) {}
 				break;
 
@@ -814,7 +811,5 @@ void ramTest() {
 	setNumericDisplay("GOOD");
 }
 
-
-#pragma GCC pop_options
 
 /* End of File */
