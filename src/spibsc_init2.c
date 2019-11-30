@@ -284,6 +284,10 @@ extern void enable_mmu(void);
 void spibsc_init2(void)
 {
 
+	// Set mux for SPIBSC pins 2 and 3, which isn't done by default and needs to be done here for quad SPI to work, I think
+	setPinMux(4, 2, 2);
+	setPinMux(4, 3, 2);
+
 	//enable_mmu(); // Nope, causes crash
 
 	//Peripheral_Basic_Init(); // Makes clocks go way fast - oh except it actually doesn't help here
@@ -309,16 +313,17 @@ void spibsc_init2(void)
 	/* Wait TEND=1 for setting change in SPIBSC. */
     R_SFLASH_WaitTend(SPIBSC_CH);
 
-    // This bit here - I can remove it and everything functions fine. I think it's meant to speed things up, but I can only have these lines sitting here by setting
-    // but width to 1, at the top of spibsc_ioset_userdef.c. If I could set that to 4, things would be faster, but it doesn't work... - Rohan
     /* ==== Sets the SPIBSC ==== */
     R_SFLASH_Set_Config(SPIBSC_CH, &g_spibsc_cfg); // Collates a bunch of preset options into the variable-holder g_spibsc_cfg, for us to actually enact in the next step
-    if( R_SFLASH_Exmode_Setting(SPIBSC_CH, SPIBSC_CMNCR_BSZ_SINGLE, &g_spibsc_cfg) != 0 ) // This is the line I had to change from the default RSK config - it would only have worked in "DUAL" mode - when 2x flash chips connected
+
+    if( R_SFLASH_Exmode_Setting(SPIBSC_CH, SPIBSC_CMNCR_BSZ_SINGLE, &g_spibsc_cfg) != 0 )	// This is the line I had to change from the default RSK config
+    																						// - it would only have worked in "DUAL" mode - when 2x flash chips connected.
+    																						// (Or would that actually mean the DDR mode instead?)
     {
     	error_image();
     }
 
-    // SD host interface
+    // Set mux for SD host interface
 	setPinMux(7, 0, 3); // CD
 	setPinMux(7, 1, 3); // WP
 	setPinMux(7, 2, 3); // D1
@@ -384,7 +389,7 @@ void spibsc_init2(void)
 
 			// Pad to display bootloader version
 			case 0:
-				setNumericDisplay("TES2");
+				setNumericDisplay("TES3");
 				while (1) {}
 				break;
 

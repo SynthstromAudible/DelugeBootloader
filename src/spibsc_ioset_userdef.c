@@ -55,8 +55,8 @@ Typedef definitions
 /******************************************************************************
 Macro definitions
 ******************************************************************************/
-#define SPIBSC_BUS_WITDH         (1)
-//#define SPIBSC_BUS_WITDH         (4)
+//#define SPIBSC_BUS_WITDH         (1)
+#define SPIBSC_BUS_WITDH         (4)
 
 #define SPIBSC_OUTPUT_ADDR       (SPIBSC_OUTPUT_ADDR_24)
 //#define SPIBSC_OUTPUT_ADDR       (SPIBSC_OUTPUT_ADDR_32)
