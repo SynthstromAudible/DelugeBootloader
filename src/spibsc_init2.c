@@ -389,7 +389,7 @@ void spibsc_init2(void)
 
 			// Pad to display bootloader version
 			case 0:
-				setNumericDisplay("TES3");
+				setNumericDisplay("TES5");
 				while (1) {}
 				break;
 
@@ -669,7 +669,8 @@ displayError:
 }
 
 
-
+#define SDRAM_MODE_CS2    (*(volatile uint16_t *)(0x3FFFD040))
+#define SDRAM_MODE_CS3    (*(volatile uint16_t *)(0x3FFFE040))
 
 void userdef_bsc_cs2_init()
 {
@@ -771,10 +772,10 @@ void userdef_bsc_cs2_init()
 
     /* ==== SDRAM Mode Register ==== */
     /* Burst read (burst length 1)./Burst write */
-    //SDRAM_MODE_CS2 = 0;
+    SDRAM_MODE_CS2 = 0;
 
     /* SDRAM WORKAROUND - see Note */
-    //SDRAM_MODE_CS3 = 0;
+    SDRAM_MODE_CS3 = 0;
 }
 
 
