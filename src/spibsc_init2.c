@@ -389,7 +389,7 @@ void spibsc_init2(void)
 
 			// Pad to display bootloader version
 			case 0:
-				setNumericDisplay("TES5");
+				setNumericDisplay("TES6");
 				while (1) {}
 				break;
 
@@ -603,6 +603,11 @@ fileError:
 
 			// But make sure it's not too big
 			if (fileSize > maxSize) {
+				goto fileError;
+			}
+
+			// Or to small
+			if (!fileSize) {
 				goto fileError;
 			}
 
