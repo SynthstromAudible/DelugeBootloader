@@ -389,7 +389,7 @@ void spibsc_init2(void)
 
 			// Pad to display bootloader version
 			case 0:
-				setNumericDisplay("TES6");
+				setNumericDisplay("TES7");
 				while (1) {}
 				break;
 
