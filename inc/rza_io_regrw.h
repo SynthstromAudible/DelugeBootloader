@@ -41,6 +41,7 @@
 Includes   <System Includes> , "Project Includes"
 ******************************************************************************/
 /* ==== includes each bit mask header ==== */
+#include "r_typedefs.h"
 #include "iobitmasks/cpg_iobitmask.h"
 #include "iobitmasks/intc_iobitmask.h"
 #include "iobitmasks/bsc_iobitmask.h"

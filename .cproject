@@ -47,6 +47,10 @@
 								<option id="com.renesas.cdt.rz.Release.Compiler.option.cpuType.2116333049" name="CPU type" superClass="com.renesas.cdt.rz.Release.Compiler.option.cpuType" value="com.renesas.cdt.rz.Release.Compiler.option.cpuType.rza" valueType="enumerated"/>
 								<option id="com.renesas.cdt.core.Compiler.option.includeFileDir.1305971562" name="Include file directories" superClass="com.renesas.cdt.core.Compiler.option.includeFileDir" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/compiler_specific/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/mtu}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/system}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/rspi}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/drivers/oled}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/iobitmasks}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/iodefines}&quot;"/>
@@ -144,7 +148,7 @@
 								<option command="-s" id="com.renesas.cdt.core.Linker.option.misc16.1477253342" name="Omit all symbol information from the output file(-s)" superClass="com.renesas.cdt.core.Linker.option.misc16" value="false" valueType="boolean"/>
 								<option command="" id="com.renesas.cdt.rz.Release.Linker.option.linkUsingGcc.1575812364" name="Link using &quot;gcc&quot; command instead of &quot;ld&quot; command" superClass="com.renesas.cdt.rz.Release.Linker.option.linkUsingGcc" value="false" valueType="boolean"/>
 								<option id="com.renesas.cdt.core.Linker.option.commandFileOverride.1012247503" name="Command file overide" superClass="com.renesas.cdt.core.Linker.option.commandFileOverride" value="com.renesas.cdt.core.Linker.option.commandFileOverride.externalLinkerScript" valueType="enumerated"/>
-								<option command=" -T&quot;D:/Renesas e2 workspace/RZ_A1H_QSPI_LOADER\Release\LinkerSubCommand.tmp&quot; -T" id="com.renesas.cdt.core.Linker.option.file.109457764" name="File" superClass="com.renesas.cdt.core.Linker.option.file" value="&quot;${workspace_loc:/${ProjName}/compiler_specific/GNU_e2studio-QSPI_SpSb.ld}&quot;" valueType="string"/>
+								<option command=" -T&quot;C:/Users/Rohan/Documents/e2 studio workspace old v3p1/RZ_A1H_QSPI_LOADER\Release\LinkerSubCommand.tmp&quot; -T" id="com.renesas.cdt.core.Linker.option.file.109457764" name="File" superClass="com.renesas.cdt.core.Linker.option.file" value="&quot;${workspace_loc:/${ProjName}/compiler_specific/GNU_e2studio-QSPI_SpSb.ld}&quot;" valueType="string"/>
 								<option command="-S" id="com.renesas.cdt.rz.Release.Linker.option.omitDebuggerSymbol.774903191" name="Omit debugger symbol information from the output file(-S)" superClass="com.renesas.cdt.rz.Release.Linker.option.omitDebuggerSymbol" value="false" valueType="boolean"/>
 							</tool>
 							<tool command="arm-none-eabi-objcopy" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG}${OUTPUT_PREFIX} ${INPUTS}${OUTPUT}" errorParsers="" id="com.renesas.cdt.rz.release.win32.tool.objcopy.Id.799707755" name="Objcopy" superClass="com.renesas.cdt.rz.release.win32.tool.objcopy.Id"/>

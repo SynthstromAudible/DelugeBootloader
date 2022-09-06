@@ -30,14 +30,78 @@
 #define RSPI_IODEFINE_H
 /* ->SEC M1.10.1 : Not magic number */
 
+#include "iodefine.h"
+
 struct st_rspi
 {                                                          /* RSPI             */
     volatile uint8_t   SPCR;                                   /*  SPCR            */
     volatile uint8_t   SSLP;                                   /*  SSLP            */
     volatile uint8_t   SPPCR;                                  /*  SPPCR           */
-    volatile uint8_t   SPSR;                                   /*  SPSR            */
-    union iodefine_reg32_t  SPDR;                          /*  SPDR            */
-    
+    volatile union
+    {
+        unsigned char BYTE;
+        struct
+        {
+            unsigned char OVRF:1;
+            unsigned char :1;
+            unsigned char MODF:1;
+            unsigned char :2;
+            unsigned char SPTEF:1;
+            unsigned char TEND:1;
+            unsigned char SPRF:1;
+        } BIT;
+    } SPSR;
+    union
+    {
+        unsigned long LONG;
+        struct
+        {
+            unsigned short L;
+            unsigned short H;
+        } WORD;
+        struct
+        {
+            unsigned char LL;
+            unsigned char LH;
+            unsigned char HL;
+            unsigned char HH;
+        } BYTE;
+        struct
+        {
+            unsigned char SPD0:1;
+            unsigned char SPD1:1;
+            unsigned char SPD2:1;
+            unsigned char SPD3:1;
+            unsigned char SPD4:1;
+            unsigned char SPD5:1;
+            unsigned char SPD6:1;
+            unsigned char SPD7:1;
+            unsigned char SPD8:1;
+            unsigned char SPD9:1;
+            unsigned char SPD10:1;
+            unsigned char SPD11:1;
+            unsigned char SPD12:1;
+            unsigned char SPD13:1;
+            unsigned char SPD14:1;
+            unsigned char SPD15:1;
+            unsigned char SPD16:1;
+            unsigned char SPD17:1;
+            unsigned char SPD18:1;
+            unsigned char SPD19:1;
+            unsigned char SPD20:1;
+            unsigned char SPD21:1;
+            unsigned char SPD22:1;
+            unsigned char SPD23:1;
+            unsigned char SPD24:1;
+            unsigned char SPD25:1;
+            unsigned char SPD26:1;
+            unsigned char SPD27:1;
+            unsigned char SPD28:1;
+            unsigned char SPD29:1;
+            unsigned char SPD30:1;
+            unsigned char SPD31:1;
+        } BIT;
+    } SPDR;
     volatile uint8_t   SPSCR;                                  /*  SPSCR           */
     volatile uint8_t   SPSSR;                                  /*  SPSSR           */
     volatile uint8_t   SPBR;                                   /*  SPBR            */
@@ -52,7 +116,18 @@ struct st_rspi
     volatile uint16_t SPCMD2;                                 /*  SPCMD2          */
     volatile uint16_t SPCMD3;                                 /*  SPCMD3          */
     volatile uint8_t   dummy2[8];                              /*                  */
-    volatile uint8_t   SPBFCR;                                 /*  SPBFCR          */
+    union
+    {
+        unsigned char BYTE;
+        struct
+        {
+            unsigned char RXTRG:3;
+            unsigned char :1;
+            unsigned char TXTRG:2;
+            unsigned char RXRST:1;
+            unsigned char TXRST:1;
+        } BIT;
+    } SPBFCR;
     volatile uint8_t   dummy3[1];                              /*                  */
     volatile uint16_t SPBFDR;                                 /*  SPBFDR          */
 };
@@ -63,6 +138,8 @@ struct st_rspi
 #define RSPI2   (*(struct st_rspi    *)0xE800D800uL) /* RSPI2 */
 #define RSPI3   (*(struct st_rspi    *)0xE800E000uL) /* RSPI3 */
 #define RSPI4   (*(struct st_rspi    *)0xE800E800uL) /* RSPI4 */
+
+#define RSPI(n)     (*(volatile struct st_rspi      *)(0xE800C800uL + 0x800 * n))
 
 
 /* Start of channnel array defines of RSPI */

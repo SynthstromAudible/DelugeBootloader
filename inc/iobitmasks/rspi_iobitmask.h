@@ -53,7 +53,7 @@
 
 #define RSPIn_SPSR_OVRF                     (0x01u)
 #define RSPIn_SPSR_MODF                     (0x04u)
-#define RSPIn_SPSR_SPTEF                    (0x20u)
+#define RSPI_SPSR_SPTEF                    (0x20u)
 #define RSPIn_SPSR_TEND                     (0x40u)
 #define RSPIn_SPSR_SPRF                     (0x80u)
 
@@ -141,7 +141,7 @@
 
 #define RSPIn_SPSR_OVRF_SHIFT               (0u)
 #define RSPIn_SPSR_MODF_SHIFT               (2u)
-#define RSPIn_SPSR_SPTEF_SHIFT              (5u)
+#define RSPI_SPSR_SPTEF_SHIFT              (5u)
 #define RSPIn_SPSR_TEND_SHIFT               (6u)
 #define RSPIn_SPSR_SPRF_SHIFT               (7u)
 

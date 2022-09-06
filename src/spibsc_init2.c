@@ -49,7 +49,10 @@ Includes <System Includes> , "Project Includes"
 #include "fatfs/ff.h"
 #include "sio_char.h"
 #include "peripheral_init_basic.h"
+#include "oled.h"
+#include "mtu.h"
 
+#define HAVE_OLED 1
 
 /******************************************************************************
 Typedef definitions
@@ -108,10 +111,14 @@ void spibsc_init2 (void);
 ******************************************************************************/
 void error_image(void)
 {
-
+#if HAVE_OLED
+	displayPrompt("No valid firmware is installed.\nPlease re-install firmware.");
+	monitorInputFromPICForever();
+#else
 	setNumericDisplay("ERRO");
     /* This function will never exit - the system has failed to boot. */
     while(1);
+#endif
 }
 
 /******************************************************************************
@@ -281,8 +288,119 @@ uint8_t bigBuffer[1 << 19]; // Half a meg
 extern void L1CacheInit(void);
 extern void enable_mmu(void);
 
+
+uint8_t const logoPixels[] = {
+		(1 << 4) | 0,
+		(2 << 4) | 1,
+		(3 << 4) | 2,
+		(4 << 4) | 3,
+		(4 << 4) | 0,
+		(5 << 4) | 1,
+		(6 << 4) | 2,
+		(7 << 4) | 3,
+		(0 << 4) | 2,
+		(1 << 4) | 3,
+		(2 << 4) | 4,
+		(3 << 4) | 5,
+		(5 << 4) | 5,
+		(6 << 4) | 6,
+		(7 << 4) | 7,
+		(1 << 4) | 6,
+		(2 << 4) | 7,
+		(3 << 4) | 8,
+		(4 << 4) | 9,
+		(8 << 4) | 5,
+		(9 << 4) | 6,
+		(10 << 4) | 7,
+		(5 << 4) | 7,
+		(6 << 4) | 8,
+		(7 << 4) | 9,
+};
+
+#define LOGO_END_X 11
+#define LOGO_END_Y 10
+
+#define LOGO_SCALE 3
+
+extern uint32_t __bss_start__;
+extern uint32_t __bss_end__;
+
+int bootedUp = 0;
+
+
 void spibsc_init2(void)
 {
+
+	uint32_t* here = (uint32_t*)__bss_start__;
+	while (here < (uint32_t*)__bss_end__) {
+		*here = 0;
+		here++;
+	}
+
+	enableAllModuleClocks();
+
+	mtuEnableAccess();
+	// Set up slow system timer - 33 ticks per millisecond (30.30303 microseconds per tick) on A1
+	disableTimer(TIMER_SYSTEM_SLOW);
+    timerControlSetup(TIMER_SYSTEM_SLOW, 0, 1024);
+	enableTimer(TIMER_SYSTEM_SLOW);
+
+
+	R_INTC_Init();
+
+	enable_irq();
+	enable_fiq();
+
+	//Peripheral_Basic_Init(); // Makes clocks go way fast - oh except it actually doesn't help here
+	//L1CacheInit();
+
+
+	// Uart 1 for PIC / display
+	uartInit(UART_CHANNEL_PIC, 31250);
+	setPinMux(3, 15, 5); // TX
+	setPinMux(1, 9, 3); // RX
+
+	oledInit();
+
+	char value;
+	while (uartGetChar(UART_CHANNEL_PIC, &value)) {}
+
+/*
+	int j = 0;
+	clearMainImage();
+	while (j < 128) {
+		//displayPrompt(intToString((int)j, 1));
+
+		drawString("a", j, OLED_MAIN_TOPMOST_PIXEL, oledMainImage[0], OLED_MAIN_WIDTH_PIXELS, TEXT_SPACING_X, TEXT_SIZE_Y_UPDATED, 0, OLED_MAIN_WIDTH_PIXELS);
+		//invertArea(j, 1, 20, 20, oledMainImage[0]);
+		sendMainImage();
+
+		//delayMS(25);
+		//monitorInputFromPIC();
+		delayMSWhileMonitoringPIC(25);
+		j++;
+	}
+*/
+	//displayPrompt("Deluge");
+
+
+	clearMainImage();
+	int p;
+	for (p = 0; p < sizeof(logoPixels); p++) {
+		int x = logoPixels[p] >> 4;
+		int y = logoPixels[p] & 15;
+
+		int xFromCenter = x - (LOGO_END_X >> 1) - 1;
+		int yFromCentre = y - (LOGO_END_Y >> 1) - 1;
+
+		int startY = OLED_MAIN_HEIGHT_PIXELS - (OLED_MAIN_VISIBLE_HEIGHT >> 1) + yFromCentre * LOGO_SCALE;
+
+		invertArea((OLED_MAIN_WIDTH_PIXELS >> 1) + xFromCenter * LOGO_SCALE, LOGO_SCALE,
+				startY, startY + LOGO_SCALE - 1, oledMainImage);
+
+		sendMainImage();
+		delayMSWhileMonitoringPIC(25);
+	}
 
 	// Set mux for SPIBSC pins 2 and 3, which isn't done by default and needs to be done here for quad SPI to work, I think
 	setPinMux(4, 2, 2);
@@ -292,24 +410,13 @@ void spibsc_init2(void)
 
 	//Peripheral_Basic_Init(); // Makes clocks go way fast - oh except it actually doesn't help here
 
-	enableAllModuleClocks();
 
 	//L1CacheInit(); // Enable caching. Speeds up the RAM test a little bit - I guess because stuff can be pre-fetched and stuff
 
 	userdef_bsc_cs2_init(); // Setup external RAM
 
 
-	R_INTC_Init();
-
-	enable_irq();
-	enable_fiq();
-
-	// Uart 1 for PIC / display
-	uartInit(UART_CHANNEL_PIC, 31250);
-	setPinMux(3, 15, 5); // TX
-	setPinMux(1, 9, 3); // RX
-
-
+#if 1
 	/* Wait TEND=1 for setting change in SPIBSC. */
     R_SFLASH_WaitTend(SPIBSC_CH);
 
@@ -322,6 +429,9 @@ void spibsc_init2(void)
     {
     	error_image();
     }
+#endif
+
+    bootedUp = 1;
 
     // Set mux for SD host interface
 	setPinMux(7, 0, 3); // CD
@@ -384,13 +494,18 @@ void spibsc_init2(void)
 
 			// Shift button: update the firmware
 			case 152:
-				updateFirmware(false, 0x80000, 3670016, "UPDA", EXTERNAL_MEMORY_BEGIN); // Max 3.5MB
+				updateFirmware(false, 0x80000, 3670016, HAVE_OLED ? "Updating firmware..." : "UPDA", EXTERNAL_MEMORY_BEGIN); // Max 3.5MB
 				goto bootUp;
 
 			// Pad to display bootloader version
 			case 0:
-				setNumericDisplay("TES7");
+#if HAVE_OLED
+				displayPrompt("Bootloader version: TES8");
+				monitorInputFromPICForever();
+#else
+				setNumericDisplay("TES8");
 				while (1) {}
+#endif
 				break;
 
 			// Pad to test RAM
@@ -402,6 +517,11 @@ void spibsc_init2(void)
 			// If we received the "I've finished sending everything" message, get out
 			case 253:
 				goto finishedListening;
+
+			default:
+				uartInputReceivedPossiblyOledRelated(received);
+				break;
+
 			}
 		}
 	}
@@ -409,18 +529,25 @@ finishedListening:
 
 	// If they pressed the super secret combination to overwrite the bootloader itself...
 	if (buttonsPressed == 0b111) {
+#if HAVE_OLED
+		displayPrompt("Are you sure you wish to\noverwrite the Deluge's\nbootloader? If an error\noccurs or power is lost,\nthis device will become\nunusable.");
+#else
 		setNumericDisplay("SURE");
+#endif
 
 		while (1) {
 			char received;
 			uint8_t success = uartGetChar(UART_CHANNEL_PIC, &received);
 			if (success) {
 				if (received == 175) break;
+				else {
+					uartInputReceivedPossiblyOledRelated(received);
+				}
 			}
 
 		}
 
-		updateFirmware(1, 0, 0x80000 - 0x1000, "BOOT", bigBuffer);
+		updateFirmware(1, 0, 0x80000 - 0x1000, HAVE_OLED ? "Updating bootloader.\nDo not switch device off." : "BOOT", bigBuffer);
 	}
 
 bootUp:
@@ -453,7 +580,7 @@ void enableAllModuleClocks() {
     dummy_buf = CPG.STBCR3;
 
     /* SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7       */
-    CPG.STBCR4 = 0x00u;
+    CPG.STBCR4 = 0b00000111;
 
     /* (Dummy read)                                                 */
     dummy_buf = CPG.STBCR4;
@@ -489,7 +616,7 @@ void enableAllModuleClocks() {
     dummy_buf = CPG.STBCR9;
 
     /* RSPI0, RSPI1, RSPI2, RSPI3, RSPI4, CD-ROMDEC, RSPDIF, RGPVG  */
-    CPG.STBCR10 = 0x00u;
+    CPG.STBCR10 = 0b00011111;
 
     /* (Dummy read)                                                 */
     dummy_buf = CPG.STBCR10;
@@ -530,6 +657,7 @@ void setNumericDisplay(char const* text) {
 uint8_t loadingAnimationPos;
 
 void progressLoadingAnimation() {
+	return;
 	char segmentsInWaiting[5];
 	memset(&segmentsInWaiting, 0, sizeof(segmentsInWaiting));
 
@@ -548,24 +676,47 @@ void progressLoadingAnimation() {
 	}
 }
 
+FATFS fileSystem;
+
+void displayPromptAndWait(char const* message) {
+	if (!bootedUp) return;
+
+    displayPrompt(message);
+	delayMS(10);
+	monitorInputFromPIC();
+}
 
 
 void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_t maxSize, char const* message, uint8_t* buffer) {
 	loadingAnimationPos = 0;
 	char const* errorMessage = "NONE";
 
+#if HAVE_OLED
+	displayPrompt(message);
+	delayMS(10);
+	monitorInputFromPIC();
+	delayMS(10);
+	monitorInputFromPIC();
+#else
 	setNumericDisplay(message);
+#endif
 
-	FATFS fileSystem;
 
 	FRESULT result = f_mount(&fileSystem, "", 1);
 	//setNumericDisplay("2");
 	//uartPrintln("mounted");
     if (result != FR_OK) {
 cardError:
-    	errorMessage = "CARD";
+    	errorMessage = HAVE_OLED ? "Card error" : "CARD";
 		goto displayError;
     }
+
+    displayPrompt("Filesystem mounted");
+	delayMS(10);
+	monitorInputFromPIC();
+	delayMS(10);
+	monitorInputFromPIC();
+
 	DIR dir;
 
 	result = f_opendir(&dir, "");
@@ -582,11 +733,18 @@ cardError:
 		uint8_t startsWithBoot = (!memcmp(fno.fname, "BOOT", 4) || !memcmp(fno.fname, "boot", 4)) ? 1 : 0;
 		if (startsWithBoot != doingBootloader) continue;
 
-		char* dotPos = strchr(fno.fname, '.');
+		char const* dotPos = strchr(fno.fname, '.');
 		if (dotPos != 0 && !strcmp(dotPos, ".BIN")) {
 
 			// We found our .bin file!
 			//uartPrintln("found bin file");
+
+
+		    displayPrompt("Found file");
+			delayMS(10);
+			monitorInputFromPIC();
+			delayMS(10);
+			monitorInputFromPIC();
 
 			f_closedir(&dir);
 
@@ -595,7 +753,7 @@ cardError:
 			result = f_open(&currentFile, fno.fname, FA_READ);
 			if (result != FR_OK) {
 fileError:
-				errorMessage = "FILE";
+				errorMessage = HAVE_OLED ? "File error" : "FILE";
 				goto displayError;
 			}
 
@@ -603,12 +761,22 @@ fileError:
 
 			// But make sure it's not too big
 			if (fileSize > maxSize) {
+#if HAVE_OLED
+				message = doingBootloader ? "Bootloader file found is\ntoo large to be valid." : "Firmware file found is\ntoo large to be valid.";
+				goto displayError;
+#else
 				goto fileError;
+#endif
 			}
 
 			// Or to small
 			if (!fileSize) {
+#if HAVE_OLED
+				message = doingBootloader ? "Bootloader file found is\n0 bytes." : "Firmware file found is\n0 bytes.";
+				goto displayError;
+#else
 				goto fileError;
+#endif
 			}
 
 
@@ -618,6 +786,11 @@ fileError:
 			if (result != FR_OK || numBytesRead != fileSize) goto fileError;
 			f_close(&currentFile);
 
+		    displayPrompt("File copied to RAM");
+			delayMS(10);
+			monitorInputFromPIC();
+			delayMS(10);
+			monitorInputFromPIC();
 
 			// Erase the flash memory
 			uint32_t numFlashSectors = ((fileSize - 1) >> 16) + 1;
@@ -625,15 +798,41 @@ fileError:
 
 			uint32_t eraseAddress;
 
+
+
+
+
+
 eraseFlash:
+			//monitorInputFromPIC();
 			eraseAddress = startFlashAddress;
 			while (numFlashSectors-- && eraseAddress < 0x01000000) {
+
+				if (eraseAddress == startFlashAddress) {// + 0x10000) {
+
+					//monitorInputFromPIC();
+				    displayPrompt("Flash memory erased");
+					delayMS(10);
+					//R_INTC_Disable(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL);
+					//oledSelectingComplete();
+					monitorInputFromPIC();
+					delayMS(10);
+					monitorInputFromPIC();
+					//oledTransferComplete(0);
+
+					//bufferPICUart(249); // Unselect OLED
+					//sendOledDataAfterMessage = 249;
+				}
+
+
+				//displayPrompt(intToString(numFlashSectors, 1));
+				//monitorInputFromPIC();
 				R_SFLASH_EraseSector(eraseAddress, 0, SPIBSC_CMNCR_BSZ_SINGLE, 1, SPIBSC_OUTPUT_ADDR_24);
 				eraseAddress += 0x10000; // 64K
-				progressLoadingAnimation();
+				//progressLoadingAnimation();
 			}
 
-			//uartPrintln("erasing finished");
+
 
 
 			// Copy new program from RAM to flash memory
@@ -645,32 +844,52 @@ eraseFlash:
 				int bytesLeft = startFlashAddress + fileSize - flashWriteAddress;
 				if (bytesLeft <= 0) break;
 
+				//displayPrompt(intToString(bytesLeft, 1));
+				//monitorInputFromPIC();
+
+				//monitorInputFromPIC();
+
 				int bytesToWrite = bytesLeft;
 				if (bytesToWrite > FLASH_WRITE_SIZE) bytesToWrite = FLASH_WRITE_SIZE;
 
 				int32_t error = R_SFLASH_ByteProgram(flashWriteAddress, readAddress, bytesToWrite, 0, SPIBSC_CMNCR_BSZ_SINGLE, SPIBSC_1BIT, SPIBSC_OUTPUT_ADDR_24);
 				if (error) {
+#if HAVE_OLED
+					displayPrompt("Internal flash memory error.\nTrying again...");
+#else
 					setNumericDisplay("RETR");
+#endif
 					goto eraseFlash;
 				}
 
 				flashWriteAddress += FLASH_WRITE_SIZE;
 				readAddress += FLASH_WRITE_SIZE;
-				if (((flashWriteAddress >> 8) & 63) == 0) progressLoadingAnimation();
+				//if (((flashWriteAddress >> 8) & 63) == 0) progressLoadingAnimation();
 			}
 
 			// Success. It's all updated.
+#if HAVE_OLED
+			displayPrompt(doingBootloader ? "Bootloader updated successfully\nPlease reboot." : "Firmware updated\nsuccessfully.");
+			if (doingBootloader) monitorInputFromPICForever();
+			monitorInputFromPIC();
+#else
 			setNumericDisplay("DONE");
+#endif
 			//uartPrintln("copying finished");
 			// Go back into external SPI bus mode thing
 			spibsc_exmode(0);
+			monitorInputFromPIC();
 			return;
 		}
 	}
 	f_closedir(&dir);
 displayError:
+#if HAVE_OLED
+	displayPrompt(errorMessage);
+#else
 	setNumericDisplay(errorMessage);
-	while (1) {}
+#endif
+	monitorInputFromPICForever();
 }
 
 
@@ -786,9 +1005,25 @@ void userdef_bsc_cs2_init()
 
 void ramTest() {
 
+#if HAVE_OLED
+	displayPrompt("Testing RAM...");
+#else
 	setNumericDisplay("RAM ");
+#endif
 
 	loadingAnimationPos = 0;
+
+	//delayMS(1);
+
+/*
+	int i = 0;
+	while (true) {
+		displayPrompt(intToString((int)i, 1));
+		delayMS(1);
+		monitorInputFromPIC();
+		i++;
+	}
+*/
 
 	uint32_t* address;
 
@@ -798,19 +1033,38 @@ void ramTest() {
 		*address = (uint32_t)address;
 		address++;
 
+		/*
+		if (!((uint32_t)address & 0b111111)) {
+			char buffer[12];
+			displayPrompt(intToString((int)address, 1));
+			delayMS(10);
+			monitorInputFromPIC();
+		}
+*/
+
+		/*
 		if (address >= (uint32_t*)0x0D000000 && !((uint32_t)address & (uint32_t)((1 << 20) - 1))) { // Every megabyte
 			progressLoadingAnimation();
 		}
+		*/
 	}
 
+	displayPrompt("Writing finished...");
+	delayMS(10);
+	monitorInputFromPIC();
 
 	// Read RAM
 	address = (uint32_t*)0x0C000000;
 	while (address != (uint32_t*)0x10000000) {
 
 		if (*address != (uint32_t)address) {
+#if HAVE_OLED
+			displayPrompt("RAM error detected.\nThis device will not function properly.");
+			monitorInputFromPICForever();
+#else
 			setNumericDisplay("FAIL");
 			while (1) {}
+#endif
 		}
 		address++;
 
@@ -819,7 +1073,12 @@ void ramTest() {
 		}
 	}
 
+#if HAVE_OLED
+	displayPrompt("RAM test passed.\nPlease reboot.");
+	monitorInputFromPICForever();
+#else
 	setNumericDisplay("GOOD");
+#endif
 }
 
 

@@ -390,6 +390,13 @@ struct st_dmac_n
 #define DMAC    (*(struct st_dmac    *)0xE8200000uL) /* DMAC */
 
 
+// These all by Rohan
+#define DMACn(n)			(*(struct st_dmac_n *)(0xE8200000uL + (n) * 64 + (((n) >= 8) ? 0x200 : 0)))
+#define DMACnNonVolatile(n)	(*(struct st_dmac_n_non_volatile *)(0xE8200000uL + (n) * 64 + (((n) >= 8) ? 0x200 : 0)))
+#define DCTRLn(n)			(*(((n) < 8) ? &DMAC.DCTRL_0_7 : &DMAC.DCTRL_8_15))
+#define DMARSnAddress(n)	(&DMAC.DMARS0 + ((n) >> 1))
+
+
 /* Start of channnel array defines of DMAC */
 
 /* Channnel array defines of DMACn */

@@ -30,6 +30,8 @@
 #define MTU2_IODEFINE_H
 /* ->SEC M1.10.1 : Not magic number */
 
+#include "iodefine.h"
+
 struct st_mtu2
 {                                                          /* MTU2             */
     volatile uint8_t   TCR_2;                                  /*  TCR_2           */

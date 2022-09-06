@@ -48,7 +48,7 @@ Includes   <System Includes> , "Project Includes"
 #include "../inc/sdif.h"
 #include "../inc/sd_cfg.h"
 #include "sd_dev_dmacdrv.h"
-
+#include "mtu.h"
 
 /******************************************************************************
 Typedef definitions
@@ -1394,56 +1394,40 @@ static void sddev_sdio_int_handler_1(uint32_t int_sense)
 * Arguments    : 
 * Return Value : none
 ******************************************************************************/
-static void sddev_start_timer(int msec)
+/******************************************************************************
+* Function Name: static void sddev_start_timer(int msec);
+* Description  : start timer
+* Arguments    :
+* Return Value : none
+******************************************************************************/
+uint16_t stopTime;
+void sddev_start_timer(int msec)
 {
-    unsigned char    tmp;
-
-    /* ---- Check argument ---- */
-    if ( (msec <= 0) || (msec > (0x0000ffff / MTU_TIMER_CNT)) )
-    {
-        printf("\n over timer value!!\n");
-        return;
-    }
-
-    rza_io_reg_write_8(&MTU2.TSTR,  0, MTU2_TSTR_CST4_SHIFT,  MTU2_TSTR_CST4);
-    tmp = MTU2.TSR_4; /* dummy read */
-    rza_io_reg_write_8(&MTU2.TSR_4, 0, MTU2_TSR_4_TGFA_SHIFT, MTU2_TSR_4_TGFA);
-    rza_io_reg_write_8(&MTU2.TCR_4, 1, MTU2_TCR_4_CCLR_SHIFT, MTU2_TCR_4_CCLR);
-    rza_io_reg_write_8(&MTU2.TCR_4, 0, MTU2_TCR_4_CKEG_SHIFT, MTU2_TCR_4_CKEG);
-    rza_io_reg_write_8(&MTU2.TCR_4, 5, MTU2_TCR_4_TPSC_SHIFT, MTU2_TCR_4_TPSC);
-    MTU2.TMDR_4 = 0x00;
-    MTU2.TSR_4  = 0xc0;
-    MTU2.TCNT_4 = 0;
-
-    MTU2.TGRA_4 = (unsigned short)(MTU_TIMER_CNT * msec);
-
-    rza_io_reg_write_8(&MTU2.TSTR,  1, MTU2_TSTR_CST4_SHIFT,  MTU2_TSTR_CST4);
+	stopTime = *TCNT[TIMER_SYSTEM_SLOW] + msToSlowTimerCount(msec);
 }
 
 /******************************************************************************
 * Function Name: static void sddev_end_timer(void);
 * Description  : end timer
-* Arguments    : 
+* Arguments    :
 * Return Value : none
 ******************************************************************************/
-static void sddev_end_timer(void)
+void sddev_end_timer(void)
 {
-    unsigned char    tmp;
-
-    rza_io_reg_write_8(&MTU2.TSTR,  0, MTU2_TSTR_CST4_SHIFT,  MTU2_TSTR_CST4);
-    tmp = MTU2.TSR_4; /* dummy read */
-    rza_io_reg_write_8(&MTU2.TSR_4, 0, MTU2_TSR_4_TGFA_SHIFT, MTU2_TSR_4_TGFA);
 }
 
 /******************************************************************************
 * Function Name: static int sddev_check_timer(void);
 * Description  : check
-* Arguments    : 
+* Arguments    :
 * Return Value : t
 ******************************************************************************/
-static int sddev_check_timer(void)
+int sddev_check_timer(void)
 {
-    if ( rza_io_reg_read_8(&MTU2.TSR_4, MTU2_TSR_4_TGFA_SHIFT, MTU2_TSR_4_TGFA) == 1 )
+
+	uint16_t howFarAbove = *TCNT[TIMER_SYSTEM_SLOW] - stopTime;
+
+    if (howFarAbove < 16384)
     {
         return SD_ERR;
     }
