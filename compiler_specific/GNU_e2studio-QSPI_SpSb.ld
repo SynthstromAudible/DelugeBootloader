@@ -70,8 +70,6 @@ ABT_STACK_SIZE	      = 0x2000;      /* ABT mode stack                     */
 TTB_SIZE              = 0x8000;      /* Level-1 Translation Table for MMU  */
 
 LOAD_MODULE1          = 0x18000000;  /* QSPI Boot Location */
-LOAD_MODULE2          = 0x18000300;  /* 0x00000400 */
-LOAD_MODULE3          = 0x18000800;  /* 0x00004D00  ROM Area (0x18000400-0x18003FFF) */
 EXEC_BASE             = 0x20020000;  /* The location for executable code (copied to RAM) */
 STACK_BASE            = 0x202E8000; /* Stacks and TTB. 0x202E8000 is the latest possible                     */
 
@@ -84,18 +82,18 @@ SECTIONS
     .reset LOAD_MODULE1  :  AT (LOAD_MODULE1)
     {
         /* The start object file begins with the vector table, and so must be located here. */
-        *start.o (.text)
-        *start.o (.rodata)
-        *start.o (.data)
+        *start.o (.text*)
+        *start.o (.rodata*)
+        *start.o (.data*)
         /* Reallocate the vector base register to the start of the boot loader. */
-        *vbar_init.o (.text)
-        *vbar_init.o (.rodata)
-        *vbar_init.o (.data) 
+        *vbar_init.o (.text*)
+        *vbar_init.o (.rodata*)
+        *vbar_init.o (.data*) 
         
  		/* Power ON Reset. */
-		*resetprg.o (.text)
-        *resetprg.o (.rodata)
-        *resetprg.o (.data)
+		*resetprg.o (.text*)
+        *resetprg.o (.rodata*)
+        *resetprg.o (.data*)
         
         
                 /* Any following code must be aligned to a 4 byte boundary. */
@@ -104,7 +102,7 @@ SECTIONS
         __code_reset_handler_start__ = .;
 		PROVIDE(__code_reset_handler_start__ = .);
 
-		*reset_handler.o (.text)
+		*reset_handler.o (.text*)
 		PROVIDE(_code_reset_handler_end__ = .);
         /* The following data must be aligned to a 8 byte boundary. */
         . = ALIGN(0x8);
@@ -114,16 +112,16 @@ SECTIONS
         /* The QSPI re-configuration needs to be copied to RAM by this code (single SPI)*/
         /* The section that gets copied is LoadModule 2 */
         /* (__code_spibsc_init_1_start__ to __code_spibsc_init_1_end__*/
-        *init_spibsc_init1_section.o (.text)
-        *init_spibsc_init1_section.o (.rodata)
-        *init_spibsc_init1_section.o (.data)
+        *init_spibsc_init1_section.o (.text*)
+        *init_spibsc_init1_section.o (.rodata*)
+        *init_spibsc_init1_section.o (.data*)
         PROVIDE(load1_end = .);
 	}
 
     /* Load Module 2, Executes from "EXEC_BASE" and physically stored (before copy) at 
        the address specified by LOAD_MODULE2. */
 
-	.load2 EXEC_BASE : AT (LOAD_MODULE2)
+	.load2 EXEC_BASE : AT (LOAD_MODULE1 + SIZEOF(.reset))
 	{
         /* Any following code must be aligned to a 4 byte boundary. */
         . = ALIGN(0x4);
@@ -140,22 +138,59 @@ SECTIONS
         PROVIDE(code_spibsc_init_1_start__ = .);
 
         /* Code to copy section 2 to RAM should be placed here */
-		*init_spibsc_init2_section.o (.text)
-		*init_spibsc_init2_section.o (.rodata)
-		*init_spibsc_init2_section.o (.data)
+		*init_spibsc_init2_section.o (.text*)
+		*init_spibsc_init2_section.o (.rodata*)
+		*init_spibsc_init2_section.o (.data*)
 		
         /* The QSPI re-configuration needs to be copied to RAM by this code (single SPI)*/
         /* The section that gets copied is LoadModule 2 */
         /* (__code_spibsc_init_1_start__ to __code_spibsc_init_1_end__*/
         /* Reconfiguration Functions. To speed up the SPI only.*/
-		*spibsc_init1.o (.text)
-		*spibsc_init1.o (.rodata)
-		*spibsc_init1.o (.data)
+		*spibsc_init1.o (.text*)
+		*spibsc_init1.o (.rodata*)
+		*spibsc_init1.o (.data*)
 		
         /* Code for accessing the IO registers. This is used by both loaded sections. */
-		*rza_io_regrw.o (.text)
-		*rza_io_regrw.o (.rodata)
-		*rza_io_regrw.o (.data)
+		*rza_io_regrw.o (.text*)
+		*rza_io_regrw.o (.rodata*)
+		*rza_io_regrw.o (.data*)
+		
+		
+		/* More stuff put here by Rohan */
+		
+		
+		*intc.o (.text*)
+		*intc.o (.rodata*)
+		*intc.o (.data*)
+		
+		*intc_handler.o (.text*)
+		*intc_handler.o (.rodata*)
+		*intc_handler.o (.data*)
+		
+		*intc_userdef.o (.text*)
+		*intc_userdef.o (.rodata*)
+		*intc_userdef.o (.data*)
+
+		*sio_char.o (.text*)
+		*sio_char.o (.rodata*)
+		*sio_char.o (.data*)
+		
+		*io.o (.text*)
+		*io.o (.rodata*)
+		*io.o (.data*)
+		
+		*rspi.o (.text*)
+		*rspi.o (.rodata*)
+		*rspi.o (.data*)
+		
+		*rspi_all_cpus.o (.text*)
+		*rspi_all_cpus.o (.rodata*)
+		*rspi_all_cpus.o (.data*)
+		
+		*irqfiq_handler.o (.text*)
+		*irqfiq_handler.o (.rodata*)
+		*irqfiq_handler.o (.data*)
+		
 
         /* The following location is available in the program to be copied by init_init1.*/
         __code_spibsc_init_1_end__ = .;
@@ -168,7 +203,7 @@ SECTIONS
 	
     /* Load Module 3, Executes following the end of "EXEC_BASE" and Load Module 2 and
        physically stored (before copy) at the address specified by LOAD_MODULE3. */
-	.load3 load2_end :  AT (LOAD_MODULE3)
+	.load3 load2_end :  AT (LOADADDR(.load2) + SIZEOF(.load2))
 	{
         /* Any following code must be aligned to a 4 byte boundary. */
         . = ALIGN(0x4);
@@ -200,6 +235,7 @@ SECTIONS
 
 		/* All other .text, .data and .rodata goes here, as this section is the final one loaded in order for the main functionality to happen */
         *(.text)
+        *(.text.*)
 
 
         *(.rodata)
@@ -220,7 +256,7 @@ SECTIONS
 	}
 
     /* constant data section. I've emptied this out successfully - Rohan */
-	.rodata load3_end : AT (LOAD_MODULE3 + SIZEOF(.load3))
+	.rodata load3_end : AT (LOADADDR(.load3) + SIZEOF(.load3))
     {
 
         PROVIDE(end = .);

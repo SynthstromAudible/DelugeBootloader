@@ -162,7 +162,9 @@ void Userdef_SCIF_UART_Init (uint8_t channel, uint8_t mode, uint16_t cks, uint32
     times the bit rate */
     (*(struct st_scif *)((uint32_t)&SCIF0 + channel * 0x800uL)).SCEMR = 0b10000000;
 
-    uartSetBaudRate(channel, baudRate);
+    //uartSetBaudRate(channel, baudRate);
+    /* Bit rate register (SCBRR2) setting */
+	(*(struct st_scif *)((uint32_t)&SCIF0 + channel * 0x800uL)).SCBRR = 129; // Hard coded 31250
 
    /*
 	b10:b8 RSTRG - RTS output active trigger         : Initial value

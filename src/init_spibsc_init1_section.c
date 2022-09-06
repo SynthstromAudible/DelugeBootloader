@@ -54,8 +54,7 @@ Imported global variables and functions (from other files)
 ******************************************************************************/
 extern uint32_t __code_spibsc_init_1_end__;
 extern uint32_t __code_spibsc_init_1_start__;
-//extern uint32_t *LOAD_MODULE2;
-#define LOAD_MODULE2 (0x18000300)
+extern uint32_t __code_spibsc_init_1_src__;
 
 /******************************************************************************
 Exported global variables and functions (to be accessed by other files)
@@ -100,7 +99,7 @@ void init_spibsc_init1_section (void)
 
 
     /* Point src_start to start of code in ROM */
-    psrc_start = (uint32_t *)LOAD_MODULE2;
+    psrc_start = &__code_spibsc_init_1_src__;
     
     /* The DMAC controller could be configured here, but little point as
      * we cannot continue until the copy completes. This is an option for

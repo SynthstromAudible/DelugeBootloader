@@ -20,6 +20,11 @@
 
 static const uint8_t timerCST[] = {MTU2_TSTR_CST0, MTU2_TSTR_CST1, MTU2_TSTR_CST2, MTU2_TSTR_CST3, MTU2_TSTR_CST4};
 
+
+static inline void mtuEnableAccess() {
+	MTU2.TRWER = 1u;
+}
+
 static inline void enableTimer(int timerNo) {
 	MTU2.TSTR |= timerCST[timerNo];
 }

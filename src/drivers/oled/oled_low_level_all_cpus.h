@@ -53,8 +53,8 @@ void oledTransferComplete(uint32_t int_sense);
 void bufferPICUart(char data);
 
 extern volatile bool_t spiTransferQueueCurrentlySending;
-extern volatile uint8_t spiTransferQueueReadPos;
-extern uint8_t spiTransferQueueWritePos;
+extern volatile int spiTransferQueueReadPos;
+extern int spiTransferQueueWritePos;
 
 
 struct SpiTransferQueueItem {

@@ -6,6 +6,3 @@
  */
 #include "mtu.h"
 
-void mtuEnableAccess() {
-	MTU2.TRWER = 1u;
-}

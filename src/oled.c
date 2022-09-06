@@ -23,13 +23,6 @@ uint8_t oledMainImage[OLED_MAIN_HEIGHT_PIXELS >> 3][OLED_MAIN_WIDTH_PIXELS];
 uint8_t oledMainConsoleImage[CONSOLE_IMAGE_NUM_ROWS][OLED_MAIN_WIDTH_PIXELS];
 uint8_t oledMainPopupImage[OLED_MAIN_HEIGHT_PIXELS >> 3][OLED_MAIN_WIDTH_PIXELS];
 
-uint32_t msToSlowTimerCount(uint32_t ms) {
-#if CPU_MODEL == CPU_RZ_A1
-	return ms * 33;
-#else
-	return ms * 66;
-#endif
-}
 
 void delayMS(uint32_t ms) {
 	uint16_t startTime = *TCNT[TIMER_SYSTEM_SLOW];
@@ -37,36 +30,9 @@ void delayMS(uint32_t ms) {
 	while ((uint16_t)(*TCNT[TIMER_SYSTEM_SLOW] - stopTime) >= 8);
 }
 
-void delayMSWhileMonitoringPIC(uint32_t ms) {
-	uint16_t startTime = *TCNT[TIMER_SYSTEM_SLOW];
-	uint16_t stopTime = startTime + msToSlowTimerCount(ms);
-	while ((int16_t)(*TCNT[TIMER_SYSTEM_SLOW] - stopTime) < 0) {
-		monitorInputFromPIC();
-	}
-}
 
 
-void uartInputReceivedPossiblyOledRelated(int value) {
-	if (value == sendOledDataAfterMessage) {
-		//delayUS(2500); // TODO: fix
-		if (value == 248)
-			oledSelectingComplete();
-		else
-			oledDeselectionComplete();
-	}
-}
 
-void monitorInputFromPIC() {
-	//return;
-goAgain: {}
-	char value;
-	uint8_t success = uartGetChar(UART_CHANNEL_PIC, &value);
-	if (success) {
-		uartInputReceivedPossiblyOledRelated(value);
-		goto goAgain;
-	}
-
-}
 
 void monitorInputFromPICForever() {
 	while (1) {
@@ -74,65 +40,9 @@ void monitorInputFromPICForever() {
 	}
 }
 
-void oledInit() {
-
-	// SPI for CV
-	R_RSPI_Create(SPI_CHANNEL_CV,
-			10000000, // Higher than this would probably work... but let's stick to the OLED datasheet's spec of 100ns (10MHz).
-			0, 32);
-	R_RSPI_Start(SPI_CHANNEL_CV);
-#if SPI_CHANNEL_CV == 1
-	setPinMux(6, 12, 3);
-	setPinMux(6, 14, 3);
-	setPinMux(6, 13, 3);
-#elif SPI_CHANNEL_CV == 0
-	setPinMux(6, 0, 3); // CLK
-	setPinMux(6, 2, 3);	// MOSI
-#endif
-	// If OLED sharing SPI channel, have to manually control SSL pin.
-	setOutputState(6, 1, true);
-	setPinAsOutput(6, 1);
-
-	//setupSPIInterrupts();
-	oledDMAInit();
-
-
-    delayMS(10);
-
-	// Set up 8-bit
-	RSPI0.SPDCR = 0x20u; // 8-bit
-	RSPI0.SPCMD0 = 0b0000011100000010; // 8-bit
-	RSPI0.SPBFCR.BYTE = 0b01100000;//0b00100000;
-
-	bufferPICUart(250); // D/C low
-	bufferPICUart(247); // Enable OLED
-	//uartFlushIfNotSending(UART_ITEM_PIC);
-
-	delayMS(100);
-
-
-	bufferPICUart(248); // Select OLED
-	//uartFlushIfNotSending(UART_ITEM_PIC);
-
-	delayMS(5);
 
 
 
-	oledMainInit();
-
-	delayMS(5);
-
-	bufferPICUart(249); // Unselect OLED
-	//uartFlushIfNotSending(UART_ITEM_PIC);
-
-    delayMS(10);
-}
-
-void clearMainImage() {
-	//stopBlink();
-	//stopScrollingAnimation();
-	memset(oledMainImage, 0, sizeof(oledMainImage));
-}
 
 // Clears area *inclusive* of maxX, but not maxY? Stupid.
 void clearAreaExact(int minX, int minY, int maxX, int maxY, uint8_t image[][OLED_MAIN_WIDTH_PIXELS]) {
@@ -211,32 +121,7 @@ void moveAreaUpCrude(int minX, int minY, int maxX, int maxY, int delta, uint8_t 
 	}
 }
 
-// Caller must ensure area doesn't go beyond edge of canvas.
-// Inverts area inclusive of endY, I think...
-void invertArea(int xMin, int width, int startY, int endY, uint8_t image[][OLED_MAIN_WIDTH_PIXELS]) {
-	int firstRowY = startY >> 3;
-	int lastRowY = endY >> 3;
 
-	uint8_t currentRowMask = (255 << (startY & 7));
-	uint8_t lastRowMask = (255 >> (7 - (endY & 7)));
-
-	// For each row
-	int rowY;
-	for (rowY = firstRowY; rowY <= lastRowY; rowY++) {
-
-		if (rowY == lastRowY) currentRowMask &= lastRowMask;
-
-		uint8_t* __restrict__ currentPos = &image[rowY][xMin];
-		uint8_t* const endPos = currentPos + width;
-
-		while (currentPos < endPos) {
-			*currentPos ^= currentRowMask;
-			currentPos++;
-		}
-
-		currentRowMask = 0xFF;
-	}
-}
 
 void drawGraphic(uint8_t const* graphic, int startX, int startY, int width, uint8_t image[][OLED_MAIN_WIDTH_PIXELS]) {
 	int firstRowY = startY >> 3;
@@ -632,22 +517,7 @@ void setupPopup(int width, int height) {
 	drawRectangle(popupMinX, popupMinY, popupMaxX, popupMaxY, oledMainPopupImage);
 }
 
-void sendMainImage() {
 
-	/*
-	uint8_t (*backgroundImage)[OLED_MAIN_WIDTH_PIXELS] = oledMainImage;
-
-	if (numConsoleItems) {
-		copyBackgroundAroundForeground(oledMainImage, oledMainConsoleImage, consoleMinX, consoleItems[numConsoleItems - 1].minY - 1, consoleMaxX, OLED_MAIN_HEIGHT_PIXELS - 1);
-		backgroundImage = oledMainConsoleImage;
-	}
-	if (oledPopupWidth) {
-		copyBackgroundAroundForeground(backgroundImage, oledMainPopupImage, popupMinX, popupMinY, popupMaxX, popupMaxY);
-		backgroundImage = oledMainPopupImage;
-	}
-	*/
-	enqueueSPITransfer(0, oledMainImage[0]);
-}
 
 void displayPrompt(char const* message) {
 	clearMainImage();

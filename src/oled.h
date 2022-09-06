@@ -18,6 +18,7 @@ void monitorInputFromPIC();
 void uartInputReceivedPossiblyOledRelated(int value);
 
 void delayMSWhileMonitoringPIC(uint32_t ms);
+uint32_t msToSlowTimerCount(uint32_t ms);
 
 #define TEXT_SPACING_X 6
 #define TEXT_SPACING_Y 9

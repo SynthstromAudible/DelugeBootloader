@@ -61,8 +61,8 @@
 								<option id="com.renesas.cdt.core.Compiler.option.deviceShortName.1010658356" name="DeviceShortName" superClass="com.renesas.cdt.core.Compiler.option.deviceShortName" value="R7S72100" valueType="string"/>
 								<option id="com.renesas.cdt.core.Compiler.option.CPUSeries.255482220" name="Cpu Series" superClass="com.renesas.cdt.core.Compiler.option.CPUSeries" value="" valueType="string"/>
 								<option id="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.128826593" name="Optimization Level" superClass="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel" value="com.renesas.cdt.rz.Release.Compiler.option.optimizationLevel.custom" valueType="enumerated"/>
-								<option id="com.renesas.cdt.core.Compiler.option.misc19.366879919" name="Place each function into its own section in the output file(-ffunction-sections)" superClass="com.renesas.cdt.core.Compiler.option.misc19" value="false" valueType="boolean"/>
-								<option id="com.renesas.cdt.core.Compiler.option.misc53.1825336026" name="Place each data item into its own section in the output file(-fdata-sections)" superClass="com.renesas.cdt.core.Compiler.option.misc53" value="false" valueType="boolean"/>
+								<option id="com.renesas.cdt.core.Compiler.option.misc19.366879919" name="Place each function into its own section in the output file(-ffunction-sections)" superClass="com.renesas.cdt.core.Compiler.option.misc19" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.core.Compiler.option.misc53.1825336026" name="Place each data item into its own section in the output file(-fdata-sections)" superClass="com.renesas.cdt.core.Compiler.option.misc53" value="true" valueType="boolean"/>
 								<option id="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions.586674668" name="User defined options" superClass="com.renesas.cdt.rz.Release.Compiler.option.userDefinedOptions" valueType="stringList">
 									<listOptionValue builtIn="false" value="-O2"/>
 								</option>

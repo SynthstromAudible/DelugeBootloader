@@ -198,6 +198,7 @@ void boot_demo(void)
         loop_num = (((uint32_t)size + 3) / (sizeof(uint32_t)));
         for(i=0;i<loop_num;i++)
         {
+        	if (!(i & 16383)) drawNextLogoPixel();
             (*pdst++) = (*psrc++);
         }
     }
@@ -289,38 +290,7 @@ extern void L1CacheInit(void);
 extern void enable_mmu(void);
 
 
-uint8_t const logoPixels[] = {
-		(1 << 4) | 0,
-		(2 << 4) | 1,
-		(3 << 4) | 2,
-		(4 << 4) | 3,
-		(4 << 4) | 0,
-		(5 << 4) | 1,
-		(6 << 4) | 2,
-		(7 << 4) | 3,
-		(0 << 4) | 2,
-		(1 << 4) | 3,
-		(2 << 4) | 4,
-		(3 << 4) | 5,
-		(5 << 4) | 5,
-		(6 << 4) | 6,
-		(7 << 4) | 7,
-		(1 << 4) | 6,
-		(2 << 4) | 7,
-		(3 << 4) | 8,
-		(4 << 4) | 9,
-		(8 << 4) | 5,
-		(9 << 4) | 6,
-		(10 << 4) | 7,
-		(5 << 4) | 7,
-		(6 << 4) | 8,
-		(7 << 4) | 9,
-};
 
-#define LOGO_END_X 11
-#define LOGO_END_Y 10
-
-#define LOGO_SCALE 3
 
 extern uint32_t __bss_start__;
 extern uint32_t __bss_end__;
@@ -328,42 +298,29 @@ extern uint32_t __bss_end__;
 int bootedUp = 0;
 
 
+
 void spibsc_init2(void)
 {
 
+/*
 	uint32_t* here = (uint32_t*)__bss_start__;
 	while (here < (uint32_t*)__bss_end__) {
 		*here = 0;
 		here++;
 	}
-
-	enableAllModuleClocks();
-
-	mtuEnableAccess();
-	// Set up slow system timer - 33 ticks per millisecond (30.30303 microseconds per tick) on A1
-	disableTimer(TIMER_SYSTEM_SLOW);
-    timerControlSetup(TIMER_SYSTEM_SLOW, 0, 1024);
-	enableTimer(TIMER_SYSTEM_SLOW);
+*/
 
 
-	R_INTC_Init();
 
-	enable_irq();
-	enable_fiq();
+	while (false) {
+		bool_t result = drawNextLogoPixel();
+		if (!result) break;
+		delayMSWhileMonitoringPIC(25);
+	}
 
-	//Peripheral_Basic_Init(); // Makes clocks go way fast - oh except it actually doesn't help here
-	//L1CacheInit();
 
-
-	// Uart 1 for PIC / display
-	uartInit(UART_CHANNEL_PIC, 31250);
-	setPinMux(3, 15, 5); // TX
-	setPinMux(1, 9, 3); // RX
-
-	oledInit();
-
-	char value;
-	while (uartGetChar(UART_CHANNEL_PIC, &value)) {}
+	//char value;
+	//while (uartGetChar(UART_CHANNEL_PIC, &value)) {}
 
 /*
 	int j = 0;
@@ -384,27 +341,11 @@ void spibsc_init2(void)
 	//displayPrompt("Deluge");
 
 
-	clearMainImage();
-	int p;
-	for (p = 0; p < sizeof(logoPixels); p++) {
-		int x = logoPixels[p] >> 4;
-		int y = logoPixels[p] & 15;
 
-		int xFromCenter = x - (LOGO_END_X >> 1) - 1;
-		int yFromCentre = y - (LOGO_END_Y >> 1) - 1;
-
-		int startY = OLED_MAIN_HEIGHT_PIXELS - (OLED_MAIN_VISIBLE_HEIGHT >> 1) + yFromCentre * LOGO_SCALE;
-
-		invertArea((OLED_MAIN_WIDTH_PIXELS >> 1) + xFromCenter * LOGO_SCALE, LOGO_SCALE,
-				startY, startY + LOGO_SCALE - 1, oledMainImage);
-
-		sendMainImage();
-		delayMSWhileMonitoringPIC(25);
-	}
 
 	// Set mux for SPIBSC pins 2 and 3, which isn't done by default and needs to be done here for quad SPI to work, I think
-	setPinMux(4, 2, 2);
-	setPinMux(4, 3, 2);
+	//setPinMux(4, 2, 2);
+	//setPinMux(4, 3, 2);
 
 	//enable_mmu(); // Nope, causes crash
 
@@ -558,81 +499,6 @@ bootUp:
 }
 
 
-void enableAllModuleClocks() {
-
-    volatile uint8_t dummy_buf = 0u;
-
-    UNUSED_VARIABLE(dummy_buf);
-
-    /* ---- Enable all module clocks ---- */
-
-    /* Port level is keep in standby mode, [1], [1], [0],           */
-    /* [1], [0], [1], CoreSight                                     */
-    CPG.STBCR2 = 0x6Au;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR2;
-
-    /* IEBus, IrDA, LIN0, LIN1, MTU2, RSCAN2, [0], PWM              */
-    CPG.STBCR3 = 0x00u;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR3;
-
-    /* SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7       */
-    CPG.STBCR4 = 0b00000111;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR4;
-
-    /* SCIM0, SCIM1, SDG0, SDG1, SDG2, SDG3, OSTM0, OSTM1           */
-    CPG.STBCR5 = 0x00u;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR5;
-
-    /* A/D, CEU, DISCOM0, DISCOM1, DRC0, DRC1, JCU, RTClock         */
-    CPG.STBCR6 = 0x00u;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR6;
-
-    /* DVDEC0, DVDEC1, [1], ETHER, FLCTL, [1], USB0, USB1           */
-    CPG.STBCR7 = 0x24u;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR7;
-
-    /* IMR-LS20, IMR-LS21, IMR-LSD, MMCIF, MOST50, [1], SCUX, [1]   */
-    CPG.STBCR8 = 0x05u;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR8;
-
-    /* I2C0, I2C1, I2C2, I2C3, SPIBSC0, SPIBSC1, VDC50, VDC51       */
-    CPG.STBCR9 = 0x00u;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR9;
-
-    /* RSPI0, RSPI1, RSPI2, RSPI3, RSPI4, CD-ROMDEC, RSPDIF, RGPVG  */
-    CPG.STBCR10 = 0b00011111;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR10;
-
-    /* [1], [1], SSIF0, SSIF1, SSIF2, SSIF3, SSIF4, SSIF5           */
-    CPG.STBCR11 = 0xC0u;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR11;
-
-    /* [1], [1], [1], [1], SDHI00, SDHI01, SDHI10, SDHI11           */
-    CPG.STBCR12 = 0xF0u;
-
-    /* (Dummy read)                                                 */
-    dummy_buf = CPG.STBCR12;
-}
 
 void setNumericDisplay(char const* text) {
 	uartPutChar(UART_CHANNEL_PIC, 224);
@@ -809,19 +675,7 @@ eraseFlash:
 			while (numFlashSectors-- && eraseAddress < 0x01000000) {
 
 				if (eraseAddress == startFlashAddress) {// + 0x10000) {
-
-					//monitorInputFromPIC();
-				    displayPrompt("Flash memory erased");
-					delayMS(10);
-					//R_INTC_Disable(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL);
-					//oledSelectingComplete();
-					monitorInputFromPIC();
-					delayMS(10);
-					monitorInputFromPIC();
-					//oledTransferComplete(0);
-
-					//bufferPICUart(249); // Unselect OLED
-					//sendOledDataAfterMessage = 249;
+					//
 				}
 
 
@@ -835,6 +689,15 @@ eraseFlash:
 
 
 
+			spibsc_exmode(0); // Very weirdly, you have to call this in order to output to the OLED after
+			// doing a R_SFLASH_EraseSector(). It's something to do with interrupts - if you R_INTC_Disable(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL),
+			// that at least saves everything from freezing.
+		    displayPrompt("Flash memory erased");
+			delayMS(10);
+			monitorInputFromPIC();
+			delayMS(10);
+			monitorInputFromPIC();
+
 			// Copy new program from RAM to flash memory
 			uint32_t flashWriteAddress = startFlashAddress;
 			uint8_t* readAddress = buffer;
@@ -845,8 +708,6 @@ eraseFlash:
 				if (bytesLeft <= 0) break;
 
 				//displayPrompt(intToString(bytesLeft, 1));
-				//monitorInputFromPIC();
-
 				//monitorInputFromPIC();
 
 				int bytesToWrite = bytesLeft;

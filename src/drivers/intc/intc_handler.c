@@ -138,8 +138,8 @@ void INTC_Handler_Interrupt(uint32_t icciar)
     /* The upper 1 bit out of 2 bits for the bit field width is the target bit */
     /* The target bit can be calculated by ((int_id % 16) * 2) + 1             */
     addr = (volatile uint32_t *)&INTC.ICDICFR0;
-    mask = 1 << (((int_id % 16) * 2) + 1);
-    if (0 == (*(addr + (int_id / 16)) & mask))  /* In the case of level sense */
+    mask = 1 << (((int_id & 15) * 2) + 1);
+    if (0 == (*(addr + (int_id >> 4)) & mask))  /* In the case of level sense */
     {
         int_sense = INTC_LEVEL_SENSITIVE;
     }

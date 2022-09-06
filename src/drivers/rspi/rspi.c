@@ -96,7 +96,7 @@ void R_RSPI_Create (uint8_t channel, uint32_t bitRate, uint8_t phase, uint8_t da
 	dummy_byte = RSPI1.SPPCR;
 
     /* P1 clock = 66.67MHz, SPI bit rate = 11.11Mbits/s Check Table 16.3 */
-	RSPI(channel).SPBR  = ceil((float)66666666 / (bitRate * 2) - 1);
+	RSPI(channel).SPBR = 3;//ceil((float)66666666 / (bitRate * 2) - 1); // Hard-coded 10000000
 	dummy_byte = RSPI(channel).SPBR;
 	if (dataSize == 32) RSPI(channel).SPDCR = 0x60u; // 32-bit
 	else if (dataSize == 16) RSPI(channel).SPDCR = 0x40u; // 16-bit
@@ -116,7 +116,7 @@ void R_RSPI_Create (uint8_t channel, uint32_t bitRate, uint8_t phase, uint8_t da
     dummy_byte = RSPI(channel).SPSSR;
     if (dataSize == 32) RSPI(channel).SPBFCR.BYTE = 0b00100010;
     else if (dataSize == 16) RSPI(channel).SPBFCR.BYTE = 0b00100001;
-    else RSPI(channel).SPBFCR.BYTE = 0b00100000; // Receive buffer data triggering number is 1 byte. TX buffer declared "empty" as soon as it has 4 bytes of "space" in it (remember, it has 8 bytes total)
+    else RSPI(channel).SPBFCR.BYTE = 0b01100000;//0b00100000;
     dummy_byte = RSPI(channel).SPBFCR.BYTE;
 
     if (dataSize == 32) RSPI(channel).SPCMD0 = 0b0000001100000010 | phase; // 32-bit
