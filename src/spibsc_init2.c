@@ -198,7 +198,10 @@ void boot_demo(void)
         loop_num = (((uint32_t)size + 3) / (sizeof(uint32_t)));
         for(i=0;i<loop_num;i++)
         {
-        	if (!(i & 8191)) drawNextLogoPixel();
+        	if (!(i & 2047)) {
+        		if (!(i & 8191)) drawNextLogoPixel();
+        		monitorInputFromPIC();
+        	}
             (*pdst++) = (*psrc++);
         }
     }
@@ -344,7 +347,8 @@ void spibsc_init2(void)
     																						// - it would only have worked in "DUAL" mode - when 2x flash chips connected.
     																						// (Or would that actually mean the DDR mode instead?)
     {
-    	error_image();
+    	displayPrompt("Internal flash memory error.");
+    	monitorInputFromPICForever();
     }
 #endif
 
@@ -419,7 +423,7 @@ void spibsc_init2(void)
 			// Pad to display bootloader version
 			case 0:
 #if HAVE_OLED
-				displayPrompt("Bootloader version: TES8");
+				displayPrompt("Bootloader version:\nTES8");
 				monitorInputFromPICForever();
 #else
 				setNumericDisplay("TES8");
@@ -449,7 +453,7 @@ finishedListening:
 	// If they pressed the super secret combination to overwrite the bootloader itself...
 	if (buttonsPressed == 0b111) {
 #if HAVE_OLED
-		displayPrompt("Are you sure you wish to\noverwrite the Deluge's\nbootloader? If an error\noccurs or power is lost,\nthis device will become\nunusable.");
+		displayPrompt("Overwrite bootloader?\nIf error occurs or\npower loss, device\nwill become unusable.");
 #else
 		setNumericDisplay("SURE");
 #endif
@@ -466,7 +470,7 @@ finishedListening:
 
 		}
 
-		updateFirmware(1, 0, 0x80000 - 0x1000, HAVE_OLED ? "Updating bootloader.\nDo not switch device off." : "BOOT", bigBuffer);
+		updateFirmware(1, 0, 0x80000 - 0x1000, HAVE_OLED ? "Updating bootloader.\nDo not switch device\noff." : "BOOT", bigBuffer);
 	}
 
 bootUp:
@@ -535,11 +539,7 @@ void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_
 	char const* errorMessage = "NONE";
 
 #if HAVE_OLED
-	monitorInputFromPIC();
-	//displayPrompt(message);
-	delayMS(10);
-	monitorInputFromPIC();
-	delayMS(10);
+	displayPrompt(message);
 	monitorInputFromPIC();
 #else
 	setNumericDisplay(message);
@@ -547,18 +547,13 @@ void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_
 
 
 	FRESULT result = f_mount(&fileSystem, "", 1);
-	//setNumericDisplay("2");
-	//uartPrintln("mounted");
     if (result != FR_OK) {
 cardError:
     	errorMessage = HAVE_OLED ? "Card error" : "CARD";
 		goto displayError;
     }
 
-    //displayPrompt("Filesystem mounted");
-	delayMS(10);
-	monitorInputFromPIC();
-	delayMS(10);
+    displayPrompt("Filesystem mounted");
 	monitorInputFromPIC();
 
 	DIR dir;
@@ -581,13 +576,7 @@ cardError:
 		if (dotPos != 0 && !strcmp(dotPos, ".BIN")) {
 
 			// We found our .bin file!
-			//uartPrintln("found bin file");
-
-
-		    //displayPrompt("Found file");
-			delayMS(10);
-			monitorInputFromPIC();
-			delayMS(10);
+		    displayPrompt("Found file");
 			monitorInputFromPIC();
 
 			f_closedir(&dir);
@@ -614,13 +603,25 @@ fileError:
 			}
 
 			// Or to small
-			if (!fileSize) {
+			if (doingBootloader) {
+				if (!fileSize) {
+	#if HAVE_OLED
+					message = "Bootloader file found is\n0 bytes.";
+					goto displayError;
+	#else
+					goto fileError;
+	#endif
+				}
+			}
+			else {
+				if (fileSize < ((int)DEF_USER_SIGNATURE - DEF_USER_PROGRAM_SRC + sizeof(g_signature))) {
 #if HAVE_OLED
-				message = doingBootloader ? "Bootloader file found is\n0 bytes." : "Firmware file found is\n0 bytes.";
+				message = "Firmware file found is\ntoo small to possibly\ncontain valid firmware.";
 				goto displayError;
 #else
 				goto fileError;
 #endif
+				}
 			}
 
 
@@ -630,13 +631,42 @@ fileError:
 			if (result != FR_OK || numBytesRead != fileSize) goto fileError;
 			f_close(&currentFile);
 
-			/*
-		    //displayPrompt("File copied to RAM");
-			delayMS(10);
+
+
+			if (!doingBootloader) {
+				// Check file seems to contain valid firmware
+				uint8_t p    = 0;
+				uint8_t * psrc = buffer + ((int)DEF_USER_SIGNATURE - DEF_USER_PROGRAM_SRC);
+				uint16_t  len = sizeof(g_signature);
+
+				while(--len)
+				{
+					if( (*(psrc++)) != g_signature[p++])
+					{
+						/* This is intentional */
+						break;
+					}
+				}
+
+				/* If the length remaining is not zero then the g_signature validation failed. */
+				if(!(0 == len))
+				{
+					/* This function will never return. */
+	#if HAVE_OLED
+					message = "Firmware file found does\nnot contain valid\nfirmware.";
+					goto displayError;
+	#else
+					goto fileError;
+	#endif
+				}
+			}
+
+
+
+
+		    displayPrompt("File copied to RAM");
 			monitorInputFromPIC();
-			delayMS(10);
-			monitorInputFromPIC();
-*/
+
 			// Erase the flash memory
 			uint32_t numFlashSectors = ((fileSize - 1) >> 16) + 1;
 			//uartPrintln(intToString(numSectors, 1));
@@ -653,13 +683,8 @@ eraseFlash:
 			eraseAddress = startFlashAddress;
 			while (numFlashSectors-- && eraseAddress < 0x01000000) {
 
-				if (eraseAddress == startFlashAddress) {// + 0x10000) {
-					//
-				}
+				monitorInputFromPIC();
 
-
-				//displayPrompt(intToString(numFlashSectors, 1));
-				//monitorInputFromPIC();
 				R_SFLASH_EraseSector(eraseAddress, 0, SPIBSC_CMNCR_BSZ_SINGLE, 1, SPIBSC_OUTPUT_ADDR_24);
 				eraseAddress += 0x10000; // 64K
 				//progressLoadingAnimation();
@@ -667,16 +692,13 @@ eraseFlash:
 
 
 
-/*
-			spibsc_exmode(0); // Very weirdly, you have to call this in order to output to the OLED after
+
+			//spibsc_exmode(0); // Very weirdly, you have to call this in order to output to the OLED after
 			// doing a R_SFLASH_EraseSector(). It's something to do with interrupts - if you R_INTC_Disable(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL),
 			// that at least saves everything from freezing.
 		    displayPrompt("Flash memory erased");
-			delayMS(10);
 			monitorInputFromPIC();
-			delayMS(10);
-			monitorInputFromPIC();
-*/
+
 			// Copy new program from RAM to flash memory
 			uint32_t flashWriteAddress = startFlashAddress;
 			uint8_t* readAddress = buffer;
@@ -686,8 +708,7 @@ eraseFlash:
 				int bytesLeft = startFlashAddress + fileSize - flashWriteAddress;
 				if (bytesLeft <= 0) break;
 
-				//displayPrompt(intToString(bytesLeft, 1));
-				//monitorInputFromPIC();
+				monitorInputFromPIC();
 
 				int bytesToWrite = bytesLeft;
 				if (bytesToWrite > FLASH_WRITE_SIZE) bytesToWrite = FLASH_WRITE_SIZE;
@@ -709,7 +730,7 @@ eraseFlash:
 
 			// Success. It's all updated.
 #if HAVE_OLED
-			displayPrompt(doingBootloader ? "Bootloader updated successfully\nPlease reboot." : "Firmware updated\nsuccessfully.");
+			displayPrompt(doingBootloader ? "Bootloader updated\nsuccessfully.\nPlease reboot." : "Firmware updated\nsuccessfully.");
 			if (doingBootloader) monitorInputFromPICForever();
 			monitorInputFromPIC();
 #else
@@ -719,6 +740,8 @@ eraseFlash:
 			// Go back into external SPI bus mode thing
 			spibsc_exmode(0);
 			monitorInputFromPIC();
+			clearMainImage();
+			currentLogoPixel = 0;
 			return;
 		}
 	}

@@ -204,10 +204,18 @@ void uartInputReceivedPossiblyOledRelated(int value) {
 	}
 }
 
-void monitorInputFromPIC() {
+#define OLED_INTERRUPTS 0
 
-	//return;
+void monitorInputFromPIC() {
 goAgain: {}
+
+#if !OLED_INTERRUPTS
+	if (sendOledDataAfterMessage == 256 && spiTransferQueueCurrentlySending &&
+			(DMACn(OLED_SPI_DMA_CHANNEL).CHSTAT_n & DMAC0_CHSTAT_n_TC)) {
+		oledTransferComplete(0);
+	}
+#endif
+
 	char value;
 	uint8_t success = uartGetChar(UART_CHANNEL_PIC, &value);
 	if (success) {
@@ -312,9 +320,11 @@ void oledDMAInit() {
 	setDMARS(OLED_SPI_DMA_CHANNEL, dmarsTX);
 #endif
 
+#if OLED_INTERRUPTS
 	R_INTC_RegistIntFunc(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL, oledTransferComplete);
 	R_INTC_SetPriority(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL, 13); // Priority is not very important
 	R_INTC_Enable(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL);
+#endif
 }
 
 int currentLogoPixel;
@@ -529,28 +539,22 @@ void oledInitMain() {
 
 	currentLogoPixel = 0;
 
-
 	waitForPICWithTimeout(250, 10);
 	waitForPICWithTimeout(247, 10);
 	waitForPICWithTimeout(248, 10);
 
 	oledMainInit();
 
-
 	bufferPICUart(249); // Unselect OLED
 
+#if OLED_INTERRUPTS
 	R_INTC_Init();
 	enable_irq();
 	enable_fiq();
-
+#endif
 	oledDMAInit();
 
-
-
 	clearMainImage();
-
-
-
 
 	{
 		/* Variables for program copy of code section 3 */
@@ -587,9 +591,11 @@ void oledInitMain() {
 		/* Copy the next load module. */
 		for(i = 0; i < loop_num; i++)
 		{
-			if (!(i & 16383)) drawNextLogoPixel();
+			if (!(i & 4095)) {
+				if (!(i & 16383)) drawNextLogoPixel();
+				monitorInputFromPIC();
+			}
 			*ram_start++ = *src_start++;
-			monitorInputFromPIC();
 		}
 	}
 }

@@ -11,6 +11,8 @@
 #include "oled_low_level.h"
 
 extern uint8_t oledMainImage[OLED_MAIN_HEIGHT_PIXELS >> 3][OLED_MAIN_WIDTH_PIXELS];
+extern int currentLogoPixel;
+
 
 void displayPrompt(char const* message);
 void monitorInputFromPICForever();
