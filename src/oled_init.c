@@ -195,6 +195,7 @@ void delayMSWhileMonitoringPIC(uint32_t ms) {
 
 
 void uartInputReceivedPossiblyOledRelated(int value) {
+#if OLED_INTERRUPTS
 	if (value == sendOledDataAfterMessage) {
 		//delayUS(2500); // TODO: fix
 		if (value == 248)
@@ -202,6 +203,7 @@ void uartInputReceivedPossiblyOledRelated(int value) {
 		else
 			oledDeselectionComplete();
 	}
+#endif
 }
 
 #define OLED_INTERRUPTS 0
@@ -215,7 +217,7 @@ goAgain: {}
 		oledTransferComplete(0);
 	}
 #endif
-
+return;
 	char value;
 	uint8_t success = uartGetChar(UART_CHANNEL_PIC, &value);
 	if (success) {
@@ -279,6 +281,7 @@ void oledTransferComplete(uint32_t int_sense) {
 
 	// Otherwise, deselect OLED. And when that's finished, we might send some more if there is more.
 	else {
+		return;
 		bufferPICUart(249); // Unselect OLED
 
 		//delayMS(10);
@@ -370,6 +373,9 @@ void invertArea(int xMin, int width, int startY, int endY, uint8_t image[][OLED_
 }
 
 void initiateSelectingOled() {
+	oledSelectingComplete();
+	return;
+
 	bufferPICUart(248); // Select OLED
 
 	//delayMS(10);
@@ -545,7 +551,7 @@ void oledInitMain() {
 
 	oledMainInit();
 
-	bufferPICUart(249); // Unselect OLED
+	//bufferPICUart(249); // Unselect OLED
 
 #if OLED_INTERRUPTS
 	R_INTC_Init();
@@ -586,7 +592,7 @@ void oledInitMain() {
 		 * the customers system.*/
 
 		waitForPICWithTimeout(251, 10);
-		waitForPICWithTimeout(249, 10);
+		//waitForPICWithTimeout(249, 10);
 
 		/* Copy the next load module. */
 		for(i = 0; i < loop_num; i++)

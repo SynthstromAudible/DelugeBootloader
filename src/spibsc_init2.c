@@ -112,7 +112,7 @@ void spibsc_init2 (void);
 void error_image(void)
 {
 #if HAVE_OLED
-	displayPrompt("No valid firmware is installed.\nPlease re-install firmware.");
+	displayPrompt("No valid firmware is\ninstalled. Please\nre-install firmware.");
 	monitorInputFromPICForever();
 #else
 	setNumericDisplay("ERRO");
@@ -301,6 +301,31 @@ extern uint32_t __bss_end__;
 int bootedUp = 0;
 
 
+int loadingAnimationX; // 0 means none.
+int loadingAnimationY;
+
+int loadingAnimationProgress;
+
+void setupLoadingAnimation(int newX, int newY) {
+	loadingAnimationX = newX * TEXT_SPACING_X;
+	loadingAnimationY = OLED_MAIN_TOPMOST_PIXEL + newY * TEXT_SPACING_Y;
+
+	loadingAnimationProgress = 0;
+}
+
+void progressLoadingAnimation() {
+	loadingAnimationProgress++;
+	if (loadingAnimationProgress >= 4) {
+		loadingAnimationProgress = 0;
+		clearAreaExact(loadingAnimationX, loadingAnimationY, loadingAnimationX + TEXT_SPACING_X * 3 - 1, loadingAnimationY + TEXT_SPACING_Y, oledMainImage);
+	}
+	else {
+		drawChar('.', loadingAnimationX + TEXT_SPACING_X * (loadingAnimationProgress - 1), loadingAnimationY, oledMainImage, OLED_MAIN_WIDTH_PIXELS, TEXT_SPACING_X, TEXT_SIZE_Y_UPDATED, 0, OLED_MAIN_WIDTH_PIXELS);
+	}
+	sendMainImage();
+	monitorInputFromPIC();
+}
+
 
 void spibsc_init2(void)
 {
@@ -417,7 +442,7 @@ void spibsc_init2(void)
 
 			// Shift button: update the firmware
 			case 152:
-				updateFirmware(false, 0x80000, 3670016, HAVE_OLED ? "Updating firmware..." : "UPDA", EXTERNAL_MEMORY_BEGIN); // Max 3.5MB
+				updateFirmware(false, 0x80000, 3670016, HAVE_OLED ? "Updating firmware" : "UPDA", EXTERNAL_MEMORY_BEGIN); // Max 3.5MB
 				goto bootUp;
 
 			// Pad to display bootloader version
@@ -454,6 +479,7 @@ finishedListening:
 	if (buttonsPressed == 0b111) {
 #if HAVE_OLED
 		displayPrompt("Overwrite bootloader?\nIf error occurs or\npower loss, device\nwill become unusable.");
+		monitorInputFromPIC();
 #else
 		setNumericDisplay("SURE");
 #endif
@@ -470,7 +496,7 @@ finishedListening:
 
 		}
 
-		updateFirmware(1, 0, 0x80000 - 0x1000, HAVE_OLED ? "Updating bootloader.\nDo not switch device\noff." : "BOOT", bigBuffer);
+		updateFirmware(1, 0, 0x80000 - 0x1000, HAVE_OLED ? "Updating bootloader.\nDo not switch device\noff" : "BOOT", bigBuffer);
 	}
 
 bootUp:
@@ -501,27 +527,6 @@ void setNumericDisplay(char const* text) {
 	}
 }
 
-uint8_t loadingAnimationPos;
-
-void progressLoadingAnimation() {
-	return;
-	char segmentsInWaiting[5];
-	memset(&segmentsInWaiting, 0, sizeof(segmentsInWaiting));
-
-
-    if (loadingAnimationPos < 4) segmentsInWaiting[loadingAnimationPos] = 0x40;
-    else if (loadingAnimationPos == 4) segmentsInWaiting[3] = 0x30;
-    else if (loadingAnimationPos < 9) segmentsInWaiting[3 - (loadingAnimationPos - 5)] = 0x08;
-    else segmentsInWaiting[0] = 0x06;
-
-    loadingAnimationPos = (loadingAnimationPos + 1) % 10;
-
-	uartPutChar(UART_CHANNEL_PIC, 224);
-	int i;
-	for (i = 0; i < 4; i++) {
-		uartPutChar(UART_CHANNEL_PIC, segmentsInWaiting[i]);
-	}
-}
 
 FATFS fileSystem;
 
@@ -535,11 +540,16 @@ void displayPromptAndWait(char const* message) {
 
 
 void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_t maxSize, char const* message, uint8_t* buffer) {
-	loadingAnimationPos = 0;
 	char const* errorMessage = "NONE";
 
 #if HAVE_OLED
 	displayPrompt(message);
+	if (doingBootloader) {
+		setupLoadingAnimation(3, 2);
+	}
+	else {
+		setupLoadingAnimation(17, 0);
+	}
 	monitorInputFromPIC();
 #else
 	setNumericDisplay(message);
@@ -553,8 +563,7 @@ cardError:
 		goto displayError;
     }
 
-    displayPrompt("Filesystem mounted");
-	monitorInputFromPIC();
+    progressLoadingAnimation();
 
 	DIR dir;
 
@@ -562,6 +571,8 @@ cardError:
 	//uartPrintln("dir opened");
     if (result != FR_OK) goto cardError;
 	while (true) {
+		progressLoadingAnimation();
+
 		FILINFO fno;
 		result = f_readdir(&dir, &fno); // Read a directory item
 		if (result != FR_OK || fno.fname[0] == 0) break; // Break on error or end of dir
@@ -576,8 +587,7 @@ cardError:
 		if (dotPos != 0 && !strcmp(dotPos, ".BIN")) {
 
 			// We found our .bin file!
-		    displayPrompt("Found file");
-			monitorInputFromPIC();
+		    //displayPrompt("Found file");
 
 			f_closedir(&dir);
 
@@ -595,7 +605,7 @@ fileError:
 			// But make sure it's not too big
 			if (fileSize > maxSize) {
 #if HAVE_OLED
-				message = doingBootloader ? "Bootloader file found is\ntoo large to be valid." : "Firmware file found is\ntoo large to be valid.";
+				message = doingBootloader ? "Bootloader file found\nis too large to be\nvalid." : "Firmware file found\nis too large to be\nvalid.";
 				goto displayError;
 #else
 				goto fileError;
@@ -624,6 +634,7 @@ fileError:
 				}
 			}
 
+			progressLoadingAnimation();
 
 			// The file opened. Copy it to RAM
 			UINT numBytesRead;
@@ -664,8 +675,11 @@ fileError:
 
 
 
-		    displayPrompt("File copied to RAM");
-			monitorInputFromPIC();
+			if (!doingBootloader) {
+				displayPrompt("Erasing internal\nflash memory");
+				setupLoadingAnimation(12, 1);
+				monitorInputFromPIC();
+			}
 
 			// Erase the flash memory
 			uint32_t numFlashSectors = ((fileSize - 1) >> 16) + 1;
@@ -683,9 +697,19 @@ eraseFlash:
 			eraseAddress = startFlashAddress;
 			while (numFlashSectors-- && eraseAddress < 0x01000000) {
 
-				monitorInputFromPIC();
+				progressLoadingAnimation();
 
-				R_SFLASH_EraseSector(eraseAddress, 0, SPIBSC_CMNCR_BSZ_SINGLE, 1, SPIBSC_OUTPUT_ADDR_24);
+				int32_t error = R_SFLASH_EraseSector(eraseAddress, 0, SPIBSC_CMNCR_BSZ_SINGLE, 1, SPIBSC_OUTPUT_ADDR_24);
+				if (error) {
+flashError:
+#if HAVE_OLED
+					displayPrompt("Internal flash memory\nerror.\nTrying again");
+					setupLoadingAnimation(12, 2);
+#else
+					setNumericDisplay("RETR");
+#endif
+					goto eraseFlash;
+				}
 				eraseAddress += 0x10000; // 64K
 				//progressLoadingAnimation();
 			}
@@ -696,43 +720,42 @@ eraseFlash:
 			//spibsc_exmode(0); // Very weirdly, you have to call this in order to output to the OLED after
 			// doing a R_SFLASH_EraseSector(). It's something to do with interrupts - if you R_INTC_Disable(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL),
 			// that at least saves everything from freezing.
-		    displayPrompt("Flash memory erased");
-			monitorInputFromPIC();
+			if (!doingBootloader) {
+				displayPrompt("Writing to internal\nflash memory");
+				setupLoadingAnimation(12, 1);
+				monitorInputFromPIC();
+			}
 
 			// Copy new program from RAM to flash memory
 			uint32_t flashWriteAddress = startFlashAddress;
 			uint8_t* readAddress = buffer;
 
+			int i = 0;
 			while (true) {
 
 				int bytesLeft = startFlashAddress + fileSize - flashWriteAddress;
 				if (bytesLeft <= 0) break;
 
-				monitorInputFromPIC();
+				if (!(i & ((1 << 7) - 1)))
+					progressLoadingAnimation();
 
 				int bytesToWrite = bytesLeft;
 				if (bytesToWrite > FLASH_WRITE_SIZE) bytesToWrite = FLASH_WRITE_SIZE;
 
 				int32_t error = R_SFLASH_ByteProgram(flashWriteAddress, readAddress, bytesToWrite, 0, SPIBSC_CMNCR_BSZ_SINGLE, SPIBSC_1BIT, SPIBSC_OUTPUT_ADDR_24);
-				if (error) {
-#if HAVE_OLED
-					displayPrompt("Internal flash memory error.\nTrying again...");
-#else
-					setNumericDisplay("RETR");
-#endif
-					goto eraseFlash;
-				}
+				if (error) goto flashError;
 
 				flashWriteAddress += FLASH_WRITE_SIZE;
 				readAddress += FLASH_WRITE_SIZE;
 				//if (((flashWriteAddress >> 8) & 63) == 0) progressLoadingAnimation();
+				i++;
 			}
 
 			// Success. It's all updated.
 #if HAVE_OLED
 			displayPrompt(doingBootloader ? "Bootloader updated\nsuccessfully.\nPlease reboot." : "Firmware updated\nsuccessfully.");
 			if (doingBootloader) monitorInputFromPICForever();
-			monitorInputFromPIC();
+			else delayMSWhileMonitoringPIC(900);
 #else
 			setNumericDisplay("DONE");
 #endif
@@ -869,24 +892,12 @@ void userdef_bsc_cs2_init()
 void ramTest() {
 
 #if HAVE_OLED
-	displayPrompt("Testing RAM...");
+	displayPrompt("Testing RAM");
+	setupLoadingAnimation(11, 0);
 #else
 	setNumericDisplay("RAM ");
 #endif
 
-	loadingAnimationPos = 0;
-
-	//delayMS(1);
-
-/*
-	int i = 0;
-	while (true) {
-		displayPrompt(intToString((int)i, 1));
-		delayMS(1);
-		monitorInputFromPIC();
-		i++;
-	}
-*/
 
 	uint32_t* address;
 
@@ -896,25 +907,10 @@ void ramTest() {
 		*address = (uint32_t)address;
 		address++;
 
-		/*
-		if (!((uint32_t)address & 0b111111)) {
-			char buffer[12];
-			displayPrompt(intToString((int)address, 1));
-			delayMS(10);
-			monitorInputFromPIC();
-		}
-*/
-
-		/*
-		if (address >= (uint32_t*)0x0D000000 && !((uint32_t)address & (uint32_t)((1 << 20) - 1))) { // Every megabyte
+		if (!((uint32_t)address & (uint32_t)((1 << 21) - 1))) { // Every megabyte
 			progressLoadingAnimation();
 		}
-		*/
 	}
-
-	displayPrompt("Writing finished...");
-	delayMS(10);
-	monitorInputFromPIC();
 
 	// Read RAM
 	address = (uint32_t*)0x0C000000;
