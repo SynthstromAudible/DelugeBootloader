@@ -39,7 +39,6 @@ Includes   <System Includes> , "Project Includes"
 #include "r_typedefs.h"
 #include "iodefine.h"
 #include "r_spibsc_ioset_api.h"
-#include "rza_io_regrw.h"
 
 /******************************************************************************
 Typedef definitions
@@ -64,6 +63,37 @@ Exported global variables and functions (to be accessed by other files)
 Private global variables and functions
 ******************************************************************************/
 
+static inline void rza_io_reg_write_16 (volatile uint16_t * ioreg,
+		                          uint16_t write_value,
+		                          uint16_t shift,
+		                          uint16_t mask)
+{
+    uint16_t reg_value;
+
+    /* Read from register */
+    reg_value = (*ioreg);
+
+    /* Modify value       */
+    reg_value = (uint16_t)((reg_value & (~mask)) | (write_value << shift));
+
+    /* Write to register  */
+    (*ioreg)    = reg_value;
+}
+
+static inline void ioRegSet(volatile uint16_t *reg, uint8_t p, uint8_t q, uint8_t v) {
+	rza_io_reg_write_16((volatile uint16_t *) ((uint32_t) reg + (p - 1) * 4), v,
+			q, (uint16_t) 1 << q);
+}
+
+static inline void setPinAsOutput(uint8_t p, uint8_t q) {
+	ioRegSet(&GPIO.PMC1, p, q, 0);
+	ioRegSet(&GPIO.PM1, p, q, 0);
+	ioRegSet(&GPIO.PIPC1, p, q, 0);
+}
+
+static inline void setOutputState(uint8_t p, uint8_t q, uint16_t state) {
+	ioRegSet(&GPIO.P1, p, q, state);
+}
 /******************************************************************************
 * Function Name: init_spibsc_init1_section
 * Description  : The initialisation copy function of the section.
@@ -74,6 +104,11 @@ void init_spibsc_init1_section (void)
 {
 	/* In DEBUG mode, the code is already loaded into RAM, so this function */
 	/* should not be called, otherwise it will over write the code.         */
+
+
+	//setOutputState(6, 7, true);
+	//setPinAsOutput(6, 7);
+
 
 #ifndef DEBUG
 	/* Variables for program copy of code section 2 */
@@ -95,7 +130,7 @@ void init_spibsc_init1_section (void)
 
     /* Calculate the number of copies for the size of the load section */
     /* add one extra to be on the safe side */
-    loop_num = (region_size + 1L);
+    loop_num = (region_size);// + 1L);
 
 
     /* Point src_start to start of code in ROM */

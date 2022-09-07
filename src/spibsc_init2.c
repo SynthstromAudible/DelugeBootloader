@@ -319,30 +319,6 @@ void spibsc_init2(void)
 	}
 
 
-	//char value;
-	//while (uartGetChar(UART_CHANNEL_PIC, &value)) {}
-
-/*
-	int j = 0;
-	clearMainImage();
-	while (j < 128) {
-		//displayPrompt(intToString((int)j, 1));
-
-		drawString("a", j, OLED_MAIN_TOPMOST_PIXEL, oledMainImage[0], OLED_MAIN_WIDTH_PIXELS, TEXT_SPACING_X, TEXT_SIZE_Y_UPDATED, 0, OLED_MAIN_WIDTH_PIXELS);
-		//invertArea(j, 1, 20, 20, oledMainImage[0]);
-		sendMainImage();
-
-		//delayMS(25);
-		//monitorInputFromPIC();
-		delayMSWhileMonitoringPIC(25);
-		j++;
-	}
-*/
-	//displayPrompt("Deluge");
-
-
-
-
 	// Set mux for SPIBSC pins 2 and 3, which isn't done by default and needs to be done here for quad SPI to work, I think
 	//setPinMux(4, 2, 2);
 	//setPinMux(4, 3, 2);

@@ -154,10 +154,25 @@ SECTIONS
 		*rza_io_regrw.o (.text*)
 		*rza_io_regrw.o (.rodata*)
 		*rza_io_regrw.o (.data*)
-		
-		
-		/* More stuff put here by Rohan */
-		
+
+        /* The following location is available in the program to be copied by init_init1.*/
+        __code_spibsc_init_1_end__ = .;
+		PROVIDE(__code_spibsc_init_1_end__ = .);
+
+        /* Any following code must be aligned to a 4 byte boundary. */
+		. = ALIGN(0x4);
+        PROVIDE(load2_end = .); 
+	}
+	
+	.oled load2_end :  AT (LOADADDR(.load2) + SIZEOF(.load2))
+	{
+		. = ALIGN(0x4);
+		__code_oled_src__ = LOADADDR(.oled); 
+		__code_oled_start__ = .;
+	
+		*oled_init.o (.text*) /* For some absurd reason, these have to go first. Gives me a bad feeling... */
+		*oled_init.o (.rodata*)
+		*oled_init.o (.data*)
 		
 		*intc.o (.text*)
 		*intc.o (.rodata*)
@@ -191,19 +206,15 @@ SECTIONS
 		*irqfiq_handler.o (.rodata*)
 		*irqfiq_handler.o (.data*)
 		
-
-        /* The following location is available in the program to be copied by init_init1.*/
-        __code_spibsc_init_1_end__ = .;
-		PROVIDE(__code_spibsc_init_1_end__ = .);
-
-        /* Any following code must be aligned to a 4 byte boundary. */
+	
 		. = ALIGN(0x4);
-        PROVIDE(load2_end = .); 
-	} 
+		__code_oled_end__ = .;
+        PROVIDE(oled_end = .); 
+	}
 	
     /* Load Module 3, Executes following the end of "EXEC_BASE" and Load Module 2 and
        physically stored (before copy) at the address specified by LOAD_MODULE3. */
-	.load3 load2_end :  AT (LOADADDR(.load2) + SIZEOF(.load2))
+	.load3 oled_end :  AT (LOADADDR(.oled) + SIZEOF(.oled))
 	{
         /* Any following code must be aligned to a 4 byte boundary. */
         . = ALIGN(0x4);

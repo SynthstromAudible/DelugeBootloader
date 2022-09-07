@@ -76,6 +76,7 @@ void PowerON_Reset (void)
     spibsc_init1();
     /* The initial loader has run and the SPI interface is now at high speed */
     init_spibsc_init2_section();
+    oledInitMain();
     spibsc_init2();
 
 	/* Stops program from running off */
