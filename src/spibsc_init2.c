@@ -198,7 +198,7 @@ void boot_demo(void)
         loop_num = (((uint32_t)size + 3) / (sizeof(uint32_t)));
         for(i=0;i<loop_num;i++)
         {
-        	if (!(i & 16383)) drawNextLogoPixel();
+        	if (!(i & 8191)) drawNextLogoPixel();
             (*pdst++) = (*psrc++);
         }
     }
@@ -410,13 +410,15 @@ void spibsc_init2(void)
 
 	//uartPrintln("listening");
 	// Listen for a while
-	i = 100000;
-	while (i--) {
+	uint16_t startTime = *TCNT[TIMER_SYSTEM_SLOW];
+	uint16_t stopTime = startTime + msToSlowTimerCount(50);
+
+	while ((int16_t)(*TCNT[TIMER_SYSTEM_SLOW] - stopTime) < 0) {
 		char received;
 		uint8_t success = uartGetChar(UART_CHANNEL_PIC, &received);
 
 		if (success) {
-			io_put_number((unsigned int)received);
+			//io_put_number((unsigned int)received);
 
 			switch (received) {
 
@@ -493,7 +495,6 @@ finishedListening:
 
 bootUp:
 
-	//uartPrintln("finished listening");
     check_image();
     boot_demo();
 }
@@ -558,7 +559,8 @@ void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_
 	char const* errorMessage = "NONE";
 
 #if HAVE_OLED
-	displayPrompt(message);
+	monitorInputFromPIC();
+	//displayPrompt(message);
 	delayMS(10);
 	monitorInputFromPIC();
 	delayMS(10);
@@ -577,7 +579,7 @@ cardError:
 		goto displayError;
     }
 
-    displayPrompt("Filesystem mounted");
+    //displayPrompt("Filesystem mounted");
 	delayMS(10);
 	monitorInputFromPIC();
 	delayMS(10);
@@ -606,7 +608,7 @@ cardError:
 			//uartPrintln("found bin file");
 
 
-		    displayPrompt("Found file");
+		    //displayPrompt("Found file");
 			delayMS(10);
 			monitorInputFromPIC();
 			delayMS(10);
@@ -652,12 +654,13 @@ fileError:
 			if (result != FR_OK || numBytesRead != fileSize) goto fileError;
 			f_close(&currentFile);
 
-		    displayPrompt("File copied to RAM");
+			/*
+		    //displayPrompt("File copied to RAM");
 			delayMS(10);
 			monitorInputFromPIC();
 			delayMS(10);
 			monitorInputFromPIC();
-
+*/
 			// Erase the flash memory
 			uint32_t numFlashSectors = ((fileSize - 1) >> 16) + 1;
 			//uartPrintln(intToString(numSectors, 1));
@@ -688,7 +691,7 @@ eraseFlash:
 
 
 
-
+/*
 			spibsc_exmode(0); // Very weirdly, you have to call this in order to output to the OLED after
 			// doing a R_SFLASH_EraseSector(). It's something to do with interrupts - if you R_INTC_Disable(DMA_INTERRUPT_0 + OLED_SPI_DMA_CHANNEL),
 			// that at least saves everything from freezing.
@@ -697,7 +700,7 @@ eraseFlash:
 			monitorInputFromPIC();
 			delayMS(10);
 			monitorInputFromPIC();
-
+*/
 			// Copy new program from RAM to flash memory
 			uint32_t flashWriteAddress = startFlashAddress;
 			uint8_t* readAddress = buffer;

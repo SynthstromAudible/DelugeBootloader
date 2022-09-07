@@ -231,17 +231,9 @@ int sendOledDataAfterMessage = 256;
 
 void oledSelectingComplete() {
 	sendOledDataAfterMessage = 256;
-	RSPI(SPI_CHANNEL_OLED_MAIN).SPDCR = 0x20u; // 8-bit
-	RSPI(SPI_CHANNEL_OLED_MAIN).SPCMD0 = 0b0000011100000010; // 8-bit
-	RSPI(SPI_CHANNEL_OLED_MAIN).SPBFCR.BYTE = 0b01100000;//0b00100000;
-	//DMACn(OLED_SPI_DMA_CHANNEL).CHCFG_n = 0b00000000001000000000001001101000 | (OLED_SPI_DMA_CHANNEL & 7);
 
-	int transferSize = (OLED_MAIN_HEIGHT_PIXELS >> 3) * OLED_MAIN_WIDTH_PIXELS;
-	DMACn(OLED_SPI_DMA_CHANNEL).N0TB_n = transferSize; // TODO: only do this once?
-	uint32_t dataAddress = (uint32_t)spiTransferQueue[spiTransferQueueReadPos].dataAddress;
-	DMACn(OLED_SPI_DMA_CHANNEL).N0SA_n = dataAddress;
 	spiTransferQueueReadPos = (spiTransferQueueReadPos + 1) & (SPI_TRANSFER_QUEUE_SIZE - 1);
-	//v7_dma_flush_range(dataAddress, dataAddress + transferSize);
+	//v7_dma_flush_range((uint32_t)oledMainImage, (uint32_t)oledMainImage + sizeof(oledMainImage));
 	DMACn(OLED_SPI_DMA_CHANNEL).CHCTRL_n |= DMAC_CHCTRL_0S_CLRTC | DMAC_CHCTRL_0S_SETEN; // ---- Enable DMA Transfer and clear TC bit ----
 }
 
@@ -266,6 +258,10 @@ void oledTransferComplete(uint32_t int_sense) {
 }
 
 void oledDMAInit() {
+
+	DMACn(OLED_SPI_DMA_CHANNEL).N0TB_n = sizeof(oledMainImage);
+	DMACn(OLED_SPI_DMA_CHANNEL).N0SA_n = (uint32_t)oledMainImage;
+
 
 	// ---- DMA Control Register Setting ----
 	DCTRLn(OLED_SPI_DMA_CHANNEL) = 0;
@@ -581,6 +577,7 @@ void init_spibsc_init2_section (void)
     {
     	if (!(i & 16383)) drawNextLogoPixel();
         *ram_start++ = *src_start++;
+        monitorInputFromPIC();
     }
 #endif
 }
