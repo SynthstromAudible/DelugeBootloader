@@ -198,13 +198,15 @@ void boot_demo(void)
         loop_num = (((uint32_t)size + 3) / (sizeof(uint32_t)));
         for(i=0;i<loop_num;i++)
         {
-        	if (!(i & 2047)) {
-        		if (!(i & 8191)) drawNextLogoPixel();
-        		monitorInputFromPIC();
-        	}
+			if (!(i & 16383)) {
+				drawNextLogoPixel();
+				monitorInputFromPIC();
+			}
             (*pdst++) = (*psrc++);
         }
     }
+    bufferPICUart(249); // Unselect OLED. Prevents any garbage getting to it while firmware starts up.
+
     UserProgJmp((uint32_t )pexe);
 }
 
@@ -539,11 +541,11 @@ void displayPromptAndWait(char const* message) {
 }
 
 
-void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_t maxSize, char const* message, uint8_t* buffer) {
-	char const* errorMessage = "NONE";
+void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_t maxSize, char const* initialMessage, uint8_t* buffer) {
+	char const* errorMessage;
 
 #if HAVE_OLED
-	displayPrompt(message);
+	displayPrompt(initialMessage);
 	if (doingBootloader) {
 		setupLoadingAnimation(3, 2);
 	}
@@ -552,14 +554,14 @@ void updateFirmware(uint8_t doingBootloader, uint32_t startFlashAddress, uint32_
 	}
 	monitorInputFromPIC();
 #else
-	setNumericDisplay(message);
+	setNumericDisplay(initialMessage);
 #endif
 
 
 	FRESULT result = f_mount(&fileSystem, "", 1);
     if (result != FR_OK) {
 cardError:
-    	errorMessage = HAVE_OLED ? "Card error" : "CARD";
+    	errorMessage = HAVE_OLED ? "Card error. A FAT32-\nformatted card must\nbe inserted. Please\ntry again." : "CARD";
 		goto displayError;
     }
 
@@ -589,23 +591,14 @@ cardError:
 			// We found our .bin file!
 		    //displayPrompt("Found file");
 
+			uint32_t fileSize = fno.fsize;
+
 			f_closedir(&dir);
-
-			FIL currentFile;
-			// Open the file
-			result = f_open(&currentFile, fno.fname, FA_READ);
-			if (result != FR_OK) {
-fileError:
-				errorMessage = HAVE_OLED ? "File error" : "FILE";
-				goto displayError;
-			}
-
-			uint32_t fileSize = currentFile.fsize;
 
 			// But make sure it's not too big
 			if (fileSize > maxSize) {
 #if HAVE_OLED
-				message = doingBootloader ? "Bootloader file found\nis too large to be\nvalid." : "Firmware file found\nis too large to be\nvalid.";
+				errorMessage = doingBootloader ? "Bootloader file found\nis too large to be\nvalid. You may safely\nreboot." : "Firmware file found\nis too large to be\nvalid.";
 				goto displayError;
 #else
 				goto fileError;
@@ -616,7 +609,7 @@ fileError:
 			if (doingBootloader) {
 				if (!fileSize) {
 	#if HAVE_OLED
-					message = "Bootloader file found is\n0 bytes.";
+					errorMessage = "Bootloader file found\nis 0 bytes. You may\nsafely reboot.";
 					goto displayError;
 	#else
 					goto fileError;
@@ -626,12 +619,22 @@ fileError:
 			else {
 				if (fileSize < ((int)DEF_USER_SIGNATURE - DEF_USER_PROGRAM_SRC + sizeof(g_signature))) {
 #if HAVE_OLED
-				message = "Firmware file found is\ntoo small to possibly\ncontain valid firmware.";
+					errorMessage = "Firmware file found\nis too small to\npossibly contain\nvalid firmware.";
 				goto displayError;
 #else
 				goto fileError;
 #endif
 				}
+			}
+
+
+			FIL currentFile;
+			// Open the file
+			result = f_open(&currentFile, fno.fname, FA_READ);
+			if (result != FR_OK) {
+fileError:
+				errorMessage = HAVE_OLED ? "Error opening file." : "FILE";
+				goto displayError;
 			}
 
 			progressLoadingAnimation();
@@ -664,7 +667,7 @@ fileError:
 				{
 					/* This function will never return. */
 	#if HAVE_OLED
-					message = "Firmware file found does\nnot contain valid\nfirmware.";
+					errorMessage = "Firmware file found\ndoes not contain\nvalid firmware.";
 					goto displayError;
 	#else
 					goto fileError;
@@ -765,10 +768,15 @@ flashError:
 			monitorInputFromPIC();
 			clearMainImage();
 			currentLogoPixel = 0;
+			while (currentLogoPixel < 5) {
+				drawNextLogoPixel();
+				delayMS(10);
+			}
 			return;
 		}
 	}
 	f_closedir(&dir);
+	errorMessage = doingBootloader ? "No bootloader file\n(boot*.bin) found.\nYou may safely\nreboot." : "No firmware file\n(*.bin) found.";
 displayError:
 #if HAVE_OLED
 	displayPrompt(errorMessage);
@@ -893,6 +901,7 @@ void ramTest() {
 
 #if HAVE_OLED
 	displayPrompt("Testing RAM");
+	monitorInputFromPIC();
 	setupLoadingAnimation(11, 0);
 #else
 	setNumericDisplay("RAM ");
@@ -918,7 +927,7 @@ void ramTest() {
 
 		if (*address != (uint32_t)address) {
 #if HAVE_OLED
-			displayPrompt("RAM error detected.\nThis device will not function properly.");
+			displayPrompt("RAM error detected.\nThis device will not\nfunction properly.");
 			monitorInputFromPICForever();
 #else
 			setNumericDisplay("FAIL");

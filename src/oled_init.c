@@ -480,11 +480,7 @@ uint8_t const logoPixels[] = {
 
 #define LOGO_SCALE 3
 
-bool_t drawNextLogoPixel() {
-	monitorInputFromPIC();
-
-	if (currentLogoPixel >= sizeof(logoPixels)) return false;
-
+void drawLogoPixelWithoutSending() {
 	int x = logoPixels[currentLogoPixel] >> 4;
 	int y = logoPixels[currentLogoPixel] & 15;
 
@@ -496,12 +492,24 @@ bool_t drawNextLogoPixel() {
 	invertArea((OLED_MAIN_WIDTH_PIXELS >> 1) + xFromCenter * LOGO_SCALE, LOGO_SCALE,
 			startY, startY + LOGO_SCALE - 1, oledMainImage);
 
-	sendMainImage();
 	currentLogoPixel++;
+}
+
+bool_t drawNextLogoPixel() {
+	monitorInputFromPIC();
+
+	if (currentLogoPixel >= sizeof(logoPixels)) return false;
+
+	drawLogoPixelWithoutSending();
+	sendMainImage();
 	return true;
 }
 
-
+void delayMS(uint32_t ms) {
+	uint16_t startTime = *TCNT[TIMER_SYSTEM_SLOW];
+	uint16_t stopTime = startTime + msToSlowTimerCount(ms);
+	while ((uint16_t)(*TCNT[TIMER_SYSTEM_SLOW] - stopTime) >= 8);
+}
 
 void oledInitMain() {
 
@@ -562,6 +570,13 @@ void oledInitMain() {
 
 	clearMainImage();
 
+	waitForPICWithTimeout(251, 10);
+	drawNextLogoPixel();
+
+	// The OLED takes about 100ms, specified in its datasheet and also approx observed by me, to begin displaying an image.
+	// If we don't wait, we miss the first bit of the animation.
+	delayMS(100);
+
 	{
 		/* Variables for program copy of code section 3 */
 		uint32_t i,loop_num;
@@ -591,14 +606,14 @@ void oledInitMain() {
 		 * future development if other initialisation tasks are required in
 		 * the customers system.*/
 
-		waitForPICWithTimeout(251, 10);
+
 		//waitForPICWithTimeout(249, 10);
 
 		/* Copy the next load module. */
 		for(i = 0; i < loop_num; i++)
 		{
-			if (!(i & 4095)) {
-				if (!(i & 16383)) drawNextLogoPixel();
+			if (!(i & 2047)) {
+				drawNextLogoPixel();
 				monitorInputFromPIC();
 			}
 			*ram_start++ = *src_start++;

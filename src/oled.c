@@ -24,15 +24,6 @@ uint8_t oledMainConsoleImage[CONSOLE_IMAGE_NUM_ROWS][OLED_MAIN_WIDTH_PIXELS];
 uint8_t oledMainPopupImage[OLED_MAIN_HEIGHT_PIXELS >> 3][OLED_MAIN_WIDTH_PIXELS];
 
 
-void delayMS(uint32_t ms) {
-	uint16_t startTime = *TCNT[TIMER_SYSTEM_SLOW];
-	uint16_t stopTime = startTime + msToSlowTimerCount(ms);
-	while ((uint16_t)(*TCNT[TIMER_SYSTEM_SLOW] - stopTime) >= 8);
-}
-
-
-
-
 
 void monitorInputFromPICForever() {
 	while (1) {

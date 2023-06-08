@@ -54,6 +54,7 @@ DSTATUS disk_status (
 
 int32_t sdIntCallback(int32_t sd_port, int32_t cd)
 {
+	return 0;
     if ( sd_port == 0 )
     {
         if (cd)
@@ -95,7 +96,7 @@ DSTATUS disk_initialize (
 )
 {
 
-	uartPrintln("initializing disk");
+	//uartPrintln("initializing disk");
 	diskStatus = STA_NOINIT; // But then we'll try and initialize it now
 	int error;
 
@@ -104,13 +105,13 @@ DSTATUS disk_initialize (
 	//error = cmd_sd_init(0, 0);
 	error = sd_init(1, SDCFG_IP1_BASE, &initializationWorkArea[0], SD_CD_SOCKET);
 	if (error) {
-		uartPrintln("fail");
+		//uartPrintln("fail");
 
 		return STA_NOINIT;
 	}
 
 
-	uartPrintln("interrupt setup");
+	//uartPrintln("interrupt setup");
 	/*
 #ifdef SDCFG_CD_INT
     uartPrintln("set card detect by interrupt\n");
@@ -125,15 +126,15 @@ DSTATUS disk_initialize (
     error = sd_cd_int(1, SD_CD_INT_DISABLE, 0);
 
     if (error) {
-		uartPrintln("fail2");
+		//uartPrintln("fail2");
     	return STA_NOINIT;
     }
 
-	uartPrintln("buffer setup");
+	//uartPrintln("buffer setup");
 
     error = sd_set_buffer(1, &test_sd_rw_buff[0], SD_RW_BUFF_SIZE);
     if (error) {
-		uartPrintln("fail3");
+		//uartPrintln("fail3");
     	return STA_NOINIT;
     }
 
@@ -146,19 +147,19 @@ DSTATUS disk_initialize (
 
 
 
-	uartPrintln("mounting");
+	//uartPrintln("mounting");
 
 	//error = cmd_sd_ioatt(0, 0);
     error = sd_mount(1, SDCFG_DRIVER_MODE, SD_VOLT_3_3);
     if (error) {
-		uartPrintln("fail4");
+		//uartPrintln("fail4");
 		io_put_number(error);
     	return STA_NOINIT;
     }
 
 	diskStatus = 0; // Disk is ok!
 
-	uartPrintln("initializing success");
+	//uartPrintln("initializing success");
 
 	return 0; // Success
 }
@@ -185,7 +186,7 @@ DRESULT disk_read (
     	return RES_OK;
     }
     else {
-    	uartPrintln(err);
+    	//uartPrintln(err);
     	return RES_ERROR;
     }
 }
@@ -212,7 +213,7 @@ DRESULT disk_write (
     	return RES_OK;
     }
     else {
-    	uartPrintln(err);
+    	//uartPrintln(err);
     	return RES_ERROR;
     }
 }

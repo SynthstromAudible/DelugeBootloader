@@ -110,7 +110,7 @@ int sd_mount(int sd_port, unsigned long mode,unsigned long voltage)
 					/* data:08'h func:0 address:06'h verify write */
 					io_buff = 0x08;
 					if(sdio_write_direct(sd_port,&io_buff,0,0x06,SD_IO_VERIFY_WRITE) != SD_OK){
-						uartPrintln("failed here");
+						//uartPrintln("failed here");
 						return SD_ERR;
 					}
 				}
