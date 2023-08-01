@@ -1,13 +1,16 @@
+
 /*
-343  *      v7_dma_inv_range(start,end)
-344  *
-345  *      Invalidate the data cache within the specified region; we will
-346  *      be performing a DMA operation in this region and we want to
-347  *      purge old data in the cache.
-348  *
-349  *      - start   - virtual start address of region
-350  *      - end     - virtual end address of region
-351  */
+ *  linux/arch/arm/mm/cache-v7.S
+ *
+ *  Copyright (C) 2001 Deep Blue Solutions Ltd.
+ *  Copyright (C) 2005 ARM Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ *  This is the "shell" of the ARMv7 processor support.
+ */
 
 
          .macro  dcache_line_size, reg, tmp

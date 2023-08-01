@@ -18,7 +18,7 @@
 				<option id="toolchain.enable" value="true"/>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="x" artifactName="RZ_A1H_QSPI_LOADER" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" description="" id="com.renesas.cdt.managedbuild.gcc.rz.configuration.release.update.716798008" name="Release" parent="com.renesas.cdt.managedbuild.gcc.rz.configuration.release.update" postbuildStep="arm-none-eabi-objcopy -O binary ${ProjName}.x  ${ProjName}.bin&amp;">
+				<configuration artifactExtension="x" artifactName="RZ_A1H_QSPI_LOADER" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" description="" id="com.renesas.cdt.managedbuild.gcc.rz.configuration.release.update.716798008" name="Release" parent="com.renesas.cdt.managedbuild.gcc.rz.configuration.release.update" postbuildStep="">
 					<folderInfo id="com.renesas.cdt.managedbuild.gcc.rz.configuration.release.update.716798008." name="/" resourcePath="">
 						<toolChain id="com.renesas.cdt.managedbuild.gcc.rz.toolchain.release.update.1474026814" name="GCC for Renesas RZ" superClass="com.renesas.cdt.managedbuild.gcc.rz.toolchain.release.update">
 							<option id="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.createflash.1410420389" name="Create flash image" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.createflash" value="true" valueType="boolean"/>
@@ -190,7 +190,10 @@
 							</tool>
 							<tool id="com.renesas.cdt.managedbuild.gcc.rz.tool.archiver.587167406" name="Cross ARM GNU Archiver" superClass="com.renesas.cdt.managedbuild.gcc.rz.tool.archiver"/>
 							<tool id="com.renesas.cdt.managedbuild.gcc.rz.tool.flash.187393327" name="Cross ARM GNU Create Flash Image" superClass="com.renesas.cdt.managedbuild.gcc.rz.tool.flash">
-								<option id="com.renesas.cdt.managedbuild.gcc.rz.option.flash.choice.1911770386" name="Output file format (-O)" superClass="com.renesas.cdt.managedbuild.gcc.rz.option.flash.choice" value="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice.srec" valueType="enumerated"/>
+								<option id="com.renesas.cdt.managedbuild.gcc.rz.option.flash.choice.1911770386" name="Output file format (-O)" superClass="com.renesas.cdt.managedbuild.gcc.rz.option.flash.choice" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice.binary" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.renesas.cdt.managedbuild.gcc.rz.option.flash.other.600300791" name="Other flags" superClass="com.renesas.cdt.managedbuild.gcc.rz.option.flash.other" useByScannerDiscovery="false" valueType="stringList">
+									<listOptionValue builtIn="false" value="--gap-fill 0xff"/>
+								</option>
 							</tool>
 							<tool id="com.renesas.cdt.managedbuild.gcc.rz.tool.listing.1212964199" name="Cross ARM GNU Create Listing" superClass="com.renesas.cdt.managedbuild.gcc.rz.tool.listing">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.source.608330764" name="Display source (--source|-S)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.source" value="true" valueType="boolean"/>
