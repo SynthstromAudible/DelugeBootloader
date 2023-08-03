@@ -2,6 +2,8 @@
 
 When the Deluge is powered up, this bootloader is responsible for loading the firmware into RAM, and additionally for the firmware-update functionality.
 
+This code was based on a sample project provided by Renesas.
+
 ## How the code works
 The functionality of this code is a bit complex. Initially, the bootloader begins executing directly from the external flash memory IC. This portion of the bootloader then loads the next part of this bootloader into RAM for faster execution. Then a third part is loaded into RAM and executed. Only then, the bootloader performs its main function of loading or updating the Deluge's main firmware, or even updating the bootloader itself.
 
